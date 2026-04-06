@@ -1,0 +1,32 @@
+============================================================
+REPORTE DE ENTRENAMIENTO - IA PREDICTIVA
+Fecha: 2026-03-26 20:06:48
+============================================================
+
+Precisión del modelo: 54.55%
+
+Matriz de Confusión:
+[[0 1 0 0]
+ [0 3 0 1]
+ [0 2 2 0]
+ [0 0 1 1]]
+
+Reporte de Clasificación:
+              precision    recall  f1-score   support
+
+        BAJO       0.00      0.00      0.00         1
+    MODERADO       0.50      0.75      0.60         4
+        ALTO       0.67      0.50      0.57         4
+    MUY_ALTO       0.50      0.50      0.50         2
+
+    accuracy                           0.55        11
+   macro avg       0.42      0.44      0.42        11
+weighted avg       0.52      0.55      0.52        11
+
+Importancia de Características:
+  edad: 22.17%
+  sistolica: 26.71%
+  diastolica: 19.85%
+  sexo_m: 3.79%
+  num_sintomas: 16.70%
+  num_factores: 10.79%

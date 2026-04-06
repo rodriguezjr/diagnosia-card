@@ -1,0 +1,16 @@
+<!-- templates/diagnosticos/protocolos.html -->
+{% extends 'diagnosticos/base.html' %}
+{% block title %}Protocolos{% endblock %}
+{% block content %}
+<div class="card-custom bg-white p-4">
+    <h4>Protocolos Clínicos</h4>
+    <hr>
+    {% for p in protocolos %}
+        <div class="mb-3 p-3 border rounded">
+            <h6>{{ p.titulo }}</h6>
+            <small class="text-muted">{{ p.fuente }} - Nivel {{ p.nivel_evidencia }}</small>
+            <p class="mt-2">{{ p.indicaciones|truncatechars:150 }}</p>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

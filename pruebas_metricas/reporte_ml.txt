@@ -1,0 +1,13 @@
+Resultados Promedio (5-Fold CV):
+Accuracy:  41.45%
+Precision: 38.50%
+Recall:    41.45%
+F1-Score:  38.12%
+
+Matriz de Confusión Acumulada:
+Clase Verdadera | BAJO | MODERADO | ALTO | MUY_ALTO
+-------------------------------------------------------
+BAJO            |   0    |   5    |   0    |   0   
+MODERADO        |   2    |   8    |   8    |   1   
+ALTO            |   1    |   6    |   9    |   3   
+MUY_ALTO        |   0    |   3    |   3    |   5   

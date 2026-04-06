@@ -1,0 +1,746 @@
+<!-- templates/diagnosticos/dashboard_predictivo.html -->
+{% extends 'diagnosticos/base.html' %}
+
+{% block title %}IA Predictiva - Diagnos.IA{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ============================================
+       ESTILOS DEL DASHBOARD PREDICTIVO
+       ============================================ */
+    
+    /* Tarjeta principal de métricas */
+    .metric-card {
+        background: white;
+        border-radius: 1.2rem;
+        padding: 1.5rem;
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        border: 1px solid #e5e7eb;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(90deg, #2563eb, #10b981);
+    }
+
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 25px -5px rgba(0,0,0,0.15);
+    }
+
+    .metric-icon {
+        font-size: 2.5rem;
+        color: #2563eb;
+        margin-bottom: 1rem;
+    }
+
+    .metric-label {
+        font-size: 0.85rem;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.5rem;
+    }
+
+    .metric-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #1f2937;
+        line-height: 1.2;
+    }
+
+    .metric-unit {
+        font-size: 0.9rem;
+        color: #9ca3af;
+        margin-left: 0.3rem;
+        font-weight: normal;
+    }
+
+    /* Tarjeta de precisión del modelo */
+    .precision-card {
+        background: linear-gradient(135deg, #2563eb, #1e40af);
+        color: white;
+        border-radius: 1.2rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 20px 25px -5px rgba(37, 99, 235, 0.3);
+    }
+
+    .precision-title {
+        font-size: 1rem;
+        opacity: 0.9;
+        margin-bottom: 0.5rem;
+    }
+
+    .precision-value {
+        font-size: 3rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .precision-bar {
+        background: rgba(255,255,255,0.2);
+        border-radius: 1rem;
+        height: 0.8rem;
+        margin: 1rem 0;
+        overflow: hidden;
+    }
+
+    .precision-fill {
+        background: #10b981;
+        height: 100%;
+        border-radius: 1rem;
+        transition: width 1s ease;
+    }
+
+    /* Tarjeta de características */
+    .feature-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.2rem;
+        border: 1px solid #e5e7eb;
+        transition: all 0.3s ease;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        border-color: #2563eb;
+    }
+
+    .feature-name {
+        font-size: 0.9rem;
+        color: #4b5563;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .feature-bar {
+        background: #e5e7eb;
+        border-radius: 0.5rem;
+        height: 0.5rem;
+        margin: 0.5rem 0;
+        overflow: hidden;
+    }
+
+    .feature-fill {
+        background: linear-gradient(90deg, #2563eb, #60a5fa);
+        height: 100%;
+        border-radius: 0.5rem;
+        transition: width 0.5s ease;
+    }
+
+    .feature-value {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #2563eb;
+        text-align: right;
+    }
+
+    /* Tarjeta de predicción */
+    .prediction-card {
+        background: white;
+        border-radius: 1.2rem;
+        padding: 1.5rem;
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        border: 1px solid #e5e7eb;
+        transition: all 0.3s ease;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .prediction-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 25px -5px rgba(0,0,0,0.15);
+    }
+
+    .prediction-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #f3f4f6;
+    }
+
+    .prediction-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #1f2937;
+    }
+
+    .risk-badge {
+        padding: 0.4rem 1rem;
+        border-radius: 2rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .risk-badge.bajo {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .risk-badge.moderado {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .risk-badge.alto {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .risk-badge.muy-alto {
+        background: #7f1d1d;
+        color: #fee2e2;
+    }
+
+    /* Datos del paciente */
+    .patient-data-card {
+        background: #f9fafb;
+        border-radius: 0.8rem;
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+
+    .patient-data-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.4rem 0;
+        border-bottom: 1px dashed #e5e7eb;
+    }
+
+    .patient-data-item:last-child {
+        border-bottom: none;
+    }
+
+    .data-label {
+        font-size: 0.85rem;
+        color: #6b7280;
+    }
+
+    .data-value {
+        font-weight: 600;
+        color: #1f2937;
+    }
+
+    /* Medidor de confianza */
+    .confidence-meter {
+        background: #f3f4f6;
+        border-radius: 1rem;
+        padding: 1rem;
+        text-align: center;
+        margin: 1rem 0;
+    }
+
+    .confidence-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+    }
+
+    .confidence-value.alta { color: #10b981; }
+    .confidence-value.media { color: #f59e0b; }
+    .confidence-value.baja { color: #ef4444; }
+
+    .confidence-bar {
+        background: #e5e7eb;
+        border-radius: 0.5rem;
+        height: 0.5rem;
+        margin: 0.5rem 0;
+        overflow: hidden;
+    }
+
+    .confidence-fill {
+        background: linear-gradient(90deg, #10b981, #34d399);
+        height: 100%;
+        border-radius: 0.5rem;
+        transition: width 0.5s ease;
+    }
+
+    /* Barra de probabilidades */
+    .probability-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0.5rem 0;
+    }
+
+    .probability-label {
+        width: 70px;
+        font-size: 0.8rem;
+        color: #6b7280;
+    }
+
+    .probability-bar-bg {
+        flex: 1;
+        background: #e5e7eb;
+        border-radius: 0.5rem;
+        height: 0.5rem;
+        overflow: hidden;
+    }
+
+    .probability-bar {
+        height: 100%;
+        border-radius: 0.5rem;
+        transition: width 0.3s ease;
+    }
+
+    .probability-value {
+        width: 45px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #1f2937;
+        text-align: right;
+    }
+
+    /* Tabla de casos */
+    .cases-table-card {
+        background: white;
+        border-radius: 1.2rem;
+        overflow: hidden;
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        border: 1px solid #e5e7eb;
+    }
+
+    .cases-table-card .card-header {
+        background: #f9fafb;
+        padding: 1rem 1.5rem;
+        border-bottom: 2px solid #e5e7eb;
+        font-weight: 600;
+    }
+
+    .cases-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .cases-table th {
+        background: #f9fafb;
+        padding: 0.8rem 1rem;
+        text-align: left;
+        font-weight: 600;
+        color: #4b5563;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .cases-table td {
+        padding: 0.8rem 1rem;
+        border-bottom: 1px solid #f3f4f6;
+        color: #374151;
+    }
+
+    .cases-table tr:hover {
+        background: #f9fafb;
+    }
+
+    /* Tarjeta de explicación */
+    .explanation-card {
+        background: linear-gradient(135deg, #dbeafe, #eff6ff);
+        border-radius: 1.2rem;
+        padding: 1.5rem;
+        border-left: 4px solid #2563eb;
+    }
+
+    /* Grid responsivo */
+    .grid-2cols {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+
+    .grid-3cols {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+    }
+
+    .grid-4cols {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+    }
+
+    @media (max-width: 1024px) {
+        .grid-4cols {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .grid-2cols, .grid-3cols, .grid-4cols {
+            grid-template-columns: 1fr;
+        }
+        
+        .precision-value {
+            font-size: 2rem;
+        }
+    }
+
+    /* Animaciones */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animated-card {
+        animation: fadeInUp 0.5s ease forwards;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Cabecera del dashboard -->
+    <div class="mb-4">
+        <h1 class="display-5 fw-bold" style="color: #1f2937;">
+            <i class="fas fa-brain me-3" style="color: #2563eb;"></i>
+            IA Predictiva
+        </h1>
+        <p class="text-muted">Machine Learning para predicción de riesgo cardiovascular basado en casos históricos</p>
+    </div>
+
+    <!-- Métricas principales en tarjetas -->
+    <div class="grid-4cols mb-4">
+        <div class="metric-card animated-card" style="animation-delay: 0s;">
+            <div class="metric-icon">
+                <i class="fas fa-database"></i>
+            </div>
+            <div class="metric-label">Total de casos</div>
+            <div class="metric-value">{{ total_casos }}</div>
+            <div class="metric-unit">pacientes registrados</div>
+        </div>
+
+        <div class="metric-card animated-card" style="animation-delay: 0.1s;">
+            <div class="metric-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="metric-label">Precisión del modelo</div>
+            <div class="metric-value">{{ precision_modelo }}%</div>
+            <div class="metric-unit">exactitud en predicciones</div>
+        </div>
+
+        <div class="metric-card animated-card" style="animation-delay: 0.2s;">
+            <div class="metric-icon">
+                <i class="fas fa-calendar-alt"></i>
+            </div>
+            <div class="metric-label">Último entrenamiento</div>
+            <div class="metric-value">
+                {% if fecha_entrenamiento %}
+                    {{ fecha_entrenamiento|date:"d/m/Y" }}
+                {% else %}
+                    —
+                {% endif %}
+            </div>
+            <div class="metric-unit">
+                {% if fecha_entrenamiento %}
+                    {{ fecha_entrenamiento|time:"H:i" }}
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="metric-card animated-card" style="animation-delay: 0.3s;">
+            <div class="metric-icon">
+                <i class="fas fa-tags"></i>
+            </div>
+            <div class="metric-label">Características</div>
+            <div class="metric-value">{{ stats.caracteristicas|length }}</div>
+            <div class="metric-unit">variables analizadas</div>
+        </div>
+    </div>
+
+    <!-- Tarjeta de precisión del modelo -->
+    <div class="precision-card animated-card mb-4" style="animation-delay: 0.4s;">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="precision-title">
+                    <i class="fas fa-robot me-2"></i> Precisión del Modelo de Machine Learning
+                </div>
+                <div class="precision-value">{{ precision_modelo }}%</div>
+                <div class="precision-bar">
+                    <div class="precision-fill" style="width: {{ precision_modelo }}%;"></div>
+                </div>
+                <p class="small opacity-75 mb-0 mt-2">
+                    El modelo tiene una precisión del {{ precision_modelo }}% en la predicción de riesgo cardiovascular
+                </p>
+            </div>
+            <div class="col-md-4 text-center">
+                <i class="fas fa-chart-simple fa-4x opacity-50"></i>
+                <p class="small mt-2 mb-0">Basado en {{ total_casos }} casos</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Importancia de características -->
+    <div class="mb-4">
+        <h5 class="mb-3">
+            <i class="fas fa-chart-bar me-2" style="color: #2563eb;"></i>
+            Importancia de las Características
+        </h5>
+        <div class="grid-2cols">
+            {% for item in importancia %}
+                <div class="feature-card animated-card" style="animation-delay: {{ forloop.counter0|add:5|divisibleby:10 }}s;">
+                    <div class="feature-name">
+                        {% if item.nombre == 'edad' %}
+                            <i class="fas fa-user"></i> Edad
+                        {% elif item.nombre == 'sistolica' %}
+                            <i class="fas fa-heartbeat"></i> Presión Sistólica
+                        {% elif item.nombre == 'diastolica' %}
+                            <i class="fas fa-heart"></i> Presión Diastólica
+                        {% elif item.nombre == 'sexo_m' %}
+                            <i class="fas fa-venus-mars"></i> Sexo Masculino
+                        {% elif item.nombre == 'num_sintomas' %}
+                            <i class="fas fa-notes-medical"></i> Número de Síntomas
+                        {% elif item.nombre == 'num_factores' %}
+                            <i class="fas fa-exclamation-triangle"></i> Factores de Riesgo
+                        {% endif %}
+                    </div>
+                    <div class="feature-bar">
+                        <div class="feature-fill" style="width: {{ item.importancia }}%;"></div>
+                    </div>
+                    <div class="feature-value">{{ item.importancia }}% de importancia</div>
+                </div>
+            {% empty %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    No hay datos de importancia disponibles. Se necesitan más casos para entrenar el modelo.
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Predicciones de IA -->
+    <div class="mb-4">
+        <h5 class="mb-3">
+            <i class="fas fa-chart-line me-2" style="color: #2563eb;"></i>
+            Predicciones para Perfiles de Pacientes
+        </h5>
+        <div class="grid-3cols">
+            {% for pred in predicciones %}
+                <div class="prediction-card animated-card" style="animation-delay: {{ forloop.counter0|add:9|divisibleby:10 }}s;">
+                    <div class="prediction-header">
+                        <span class="prediction-title">{{ pred.perfil.nombre }}</span>
+                        <span class="risk-badge {{ pred.color }}">
+                            {{ pred.resultado.riesgo }}
+                        </span>
+                    </div>
+
+                    <div class="patient-data-card">
+                        <div class="patient-data-item">
+                            <span class="data-label">Edad:</span>
+                            <span class="data-value">{{ pred.perfil.edad }} años</span>
+                        </div>
+                        <div class="patient-data-item">
+                            <span class="data-label">Sexo:</span>
+                            <span class="data-value">
+                                {% if pred.perfil.sexo == 'M' %}Masculino{% else %}Femenino{% endif %}
+                            </span>
+                        </div>
+                        <div class="patient-data-item">
+                            <span class="data-label">Presión:</span>
+                            <span class="data-value">{{ pred.perfil.sistolica }}/{{ pred.perfil.diastolica }} mmHg</span>
+                        </div>
+                        <div class="patient-data-item">
+                            <span class="data-label">Síntomas:</span>
+                            <span class="data-value">{{ pred.perfil.sintomas }}</span>
+                        </div>
+                        <div class="patient-data-item">
+                            <span class="data-label">Factores riesgo:</span>
+                            <span class="data-value">{{ pred.perfil.factores }}</span>
+                        </div>
+                        <div class="patient-data-item">
+                            <span class="data-label">Descripción:</span>
+                            <span class="data-value small">{{ pred.perfil.descripcion }}</span>
+                        </div>
+                    </div>
+
+                    <div class="confidence-meter">
+                        <div class="confidence-value {% if pred.resultado.confianza > 70 %}alta{% elif pred.resultado.confianza > 50 %}media{% else %}baja{% endif %}">
+                            {{ pred.resultado.confianza }}%
+                        </div>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" style="width: {{ pred.resultado.confianza }}%;"></div>
+                        </div>
+                        <small class="text-muted">Nivel de confianza en la predicción</small>
+                    </div>
+
+                    <div>
+                        <small class="text-muted">Probabilidades por nivel de riesgo:</small>
+                        {% for nivel, prob in pred.resultado.probabilidades.items %}
+                            <div class="probability-item">
+                                <span class="probability-label">{{ nivel }}</span>
+                                <div class="probability-bar-bg">
+                                    <div class="probability-bar" style="width: {{ prob }}%; background: 
+                                        {% if nivel == 'BAJO' %}#10b981
+                                        {% elif nivel == 'MODERADO' %}#f59e0b
+                                        {% elif nivel == 'ALTO' %}#ef4444
+                                        {% else %}#7f1d1d{% endif %};"></div>
+                                </div>
+                                <span class="probability-value">{{ prob }}%</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Distribución de riesgos y últimos casos -->
+    <div class="grid-2cols mb-4">
+        <!-- Distribución de riesgos -->
+        <div class="cases-table-card">
+            <div class="card-header">
+                <i class="fas fa-chart-pie me-2" style="color: #2563eb;"></i>
+                Distribución de Riesgo en Casos Históricos
+            </div>
+            <div style="padding: 1.5rem;">
+                <div class="grid-2cols" style="gap: 1rem;">
+                    <div class="text-center p-3 bg-light rounded">
+                        <div class="risk-badge bajo d-inline-block mb-2">BAJO</div>
+                        <div class="fs-3 fw-bold">{{ casos_por_riesgo.BAJO }}</div>
+                        <small class="text-muted">casos</small>
+                    </div>
+                    <div class="text-center p-3 bg-light rounded">
+                        <div class="risk-badge moderado d-inline-block mb-2">MODERADO</div>
+                        <div class="fs-3 fw-bold">{{ casos_por_riesgo.MODERADO }}</div>
+                        <small class="text-muted">casos</small>
+                    </div>
+                    <div class="text-center p-3 bg-light rounded">
+                        <div class="risk-badge alto d-inline-block mb-2">ALTO</div>
+                        <div class="fs-3 fw-bold">{{ casos_por_riesgo.ALTO }}</div>
+                        <small class="text-muted">casos</small>
+                    </div>
+                    <div class="text-center p-3 bg-light rounded">
+                        <div class="risk-badge muy-alto d-inline-block mb-2">MUY ALTO</div>
+                        <div class="fs-3 fw-bold">{{ casos_por_riesgo.MUY_ALTO }}</div>
+                        <small class="text-muted">casos</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Últimos casos registrados -->
+        <div class="cases-table-card">
+            <div class="card-header">
+                <i class="fas fa-history me-2" style="color: #2563eb;"></i>
+                Últimos Casos Registrados
+            </div>
+            <div style="overflow-x: auto;">
+                <table class="cases-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Edad</th>
+                            <th>PA</th>
+                            <th>Riesgo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for caso in ultimos_casos %}
+                            <tr>
+                                <td>#{{ caso.id }}</td>
+                                <td>{{ caso.edad }} años</td>
+                                <td>{{ caso.presion_sistolica }}/{{ caso.presion_diastolica }}</td>
+                                <td>
+                                    <span class="risk-badge 
+                                        {% if caso.riesgo_cv == 'BAJO' %}bajo
+                                        {% elif caso.riesgo_cv == 'MODERADO' %}moderado
+                                        {% elif caso.riesgo_cv == 'ALTO' %}alto
+                                        {% else %}muy-alto{% endif %}"
+                                        style="font-size: 0.7rem; padding: 0.2rem 0.8rem;">
+                                        {{ caso.riesgo_cv }}
+                                    </span>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center p-4">
+                                    <i class="fas fa-inbox fa-2x mb-2 text-muted"></i>
+                                    <p class="text-muted">No hay casos registrados</p>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Explicación del modelo -->
+    <div class="explanation-card">
+        <div class="row align-items-center">
+            <div class="col-md-2 text-center">
+                <i class="fas fa-brain fa-3x" style="color: #2563eb;"></i>
+            </div>
+            <div class="col-md-10">
+                <h6 class="mb-2">
+                    <i class="fas fa-lightbulb me-2" style="color: #f59e0b;"></i>
+                    ¿Cómo funciona la IA Predictiva?
+                </h6>
+                <p class="small mb-0">
+                    El modelo utiliza un algoritmo de <strong>Random Forest</strong> con 100 árboles de decisión que analiza 
+                    {{ total_casos }} casos históricos. Las variables más importantes son la presión sistólica, la edad y 
+                    el número de factores de riesgo. Cada predicción incluye un nivel de confianza que indica qué tan 
+                    seguro está el modelo de su diagnóstico. <strong>El modelo se actualiza automáticamente</strong> con cada nuevo caso.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Animaciones para las barras de progreso
+    document.addEventListener('DOMContentLoaded', function() {
+        // Animar barras de importancia
+        const featureFills = document.querySelectorAll('.feature-fill');
+        featureFills.forEach(fill => {
+            const width = fill.style.width;
+            fill.style.width = '0%';
+            setTimeout(() => {
+                fill.style.width = width;
+            }, 100);
+        });
+
+        // Animar barras de confianza
+        const confidenceFills = document.querySelectorAll('.confidence-fill');
+        confidenceFills.forEach(fill => {
+            const width = fill.style.width;
+            fill.style.width = '0%';
+            setTimeout(() => {
+                fill.style.width = width;
+            }, 200);
+        });
+
+        // Animar barras de probabilidad
+        const probBars = document.querySelectorAll('.probability-bar');
+        probBars.forEach(bar => {
+            const width = bar.style.width;
+            bar.style.width = '0%';
+            setTimeout(() => {
+                bar.style.width = width;
+            }, 300);
+        });
+
+        console.log("✅ Dashboard predictivo cargado correctamente");
+    });
+</script>
+{% endblock %}

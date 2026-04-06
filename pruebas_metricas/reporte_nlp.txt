@@ -1,0 +1,4 @@
+Resultados Globales de la Interfaz NLP:
+Total de atributos evaluados: 15
+Aciertos Totales: 15
+Precisión General NLP: 100.00%

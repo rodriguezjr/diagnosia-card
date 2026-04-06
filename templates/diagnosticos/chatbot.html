@@ -1,0 +1,2118 @@
+<!-- templates/diagnosticos/chatbot.html -->
+{% extends 'diagnosticos/base.html' %}
+
+{% block title %}Diagnos.IA - Chatbot de Diagnóstico{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ============================================
+       VARIABLES Y CONFIGURACIÓN GENERAL
+       ============================================ */
+    :root {
+        --primary: #2563eb;
+        --primary-dark: #1d4ed8;
+        --primary-light: #3b82f6;
+        --primary-soft: #dbeafe;
+        --success: #10b981;
+        --success-dark: #059669;
+        --warning: #f59e0b;
+        --warning-dark: #d97706;
+        --danger: #ef4444;
+        --danger-dark: #dc2626;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-300: #d1d5db;
+        --gray-400: #9ca3af;
+        --gray-500: #6b7280;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+        --gray-900: #111827;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+        --radius-sm: 0.375rem;
+        --radius-md: 0.5rem;
+        --radius-lg: 1rem;
+        --radius-xl: 1.5rem;
+        --radius-full: 9999px;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    /* ============================================
+       CONTENEDOR PRINCIPAL DEL CHAT
+       ============================================ */
+    .chat-wrapper {
+        max-width: 1000px;
+        margin: 2rem auto;
+        background: white;
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-xl);
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+    }
+
+    /* ============================================
+       CABECERA DEL CHAT
+       ============================================ */
+    .chat-header {
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        padding: 2rem 2.5rem;
+        color: white;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .chat-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        animation: rotate 20s linear infinite;
+    }
+
+    @keyframes rotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    .chat-header h2 {
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .header-icon {
+        background: rgba(255, 255, 255, 0.2);
+        width: 60px;
+        height: 60px;
+        border-radius: var(--radius-lg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        backdrop-filter: blur(5px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .chat-header p {
+        font-size: 1.1rem;
+        opacity: 0.9;
+        margin: 0;
+        position: relative;
+        z-index: 1;
+        max-width: 600px;
+    }
+
+    /* ============================================
+       ÁREA DE MENSAJES
+       ============================================ */
+    .chat-messages {
+        height: 400px;
+        overflow-y: auto;
+        padding: 2rem;
+        background: var(--gray-50);
+        scroll-behavior: smooth;
+    }
+
+    /* Personalización del scrollbar */
+    .chat-messages::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .chat-messages::-webkit-scrollbar-track {
+        background: var(--gray-200);
+        border-radius: var(--radius-full);
+    }
+
+    .chat-messages::-webkit-scrollbar-thumb {
+        background: var(--gray-400);
+        border-radius: var(--radius-full);
+    }
+
+    .chat-messages::-webkit-scrollbar-thumb:hover {
+        background: var(--gray-500);
+    }
+
+    /* Estilos de los mensajes */
+    .message {
+        margin-bottom: 1.5rem;
+        display: flex;
+        animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .message.user {
+        justify-content: flex-end;
+    }
+
+    .message.bot {
+        justify-content: flex-start;
+    }
+
+    .message-content {
+        max-width: 70%;
+        padding: 1rem 1.5rem;
+        border-radius: var(--radius-xl);
+        position: relative;
+        line-height: 1.6;
+        font-size: 1rem;
+        box-shadow: var(--shadow-md);
+    }
+
+    .user .message-content {
+        background: var(--primary);
+        color: white;
+        border-bottom-right-radius: var(--radius-sm);
+    }
+
+    .user .message-content::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        right: -8px;
+        width: 0;
+        height: 0;
+        border-left: 10px solid var(--primary);
+        border-top: 10px solid transparent;
+        border-bottom: 0 solid transparent;
+    }
+
+    .bot .message-content {
+        background: white;
+        color: var(--gray-800);
+        border-bottom-left-radius: var(--radius-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .bot .message-content::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: -8px;
+        width: 0;
+        height: 0;
+        border-right: 10px solid white;
+        border-top: 10px solid transparent;
+        border-bottom: 0 solid transparent;
+    }
+
+    .message-time {
+        font-size: 0.7rem;
+        margin-top: 0.5rem;
+        opacity: 0.6;
+        text-align: right;
+    }
+
+    /* Indicador de escritura */
+    .typing-indicator {
+        display: flex;
+        gap: 0.3rem;
+        padding: 0.5rem 1rem;
+        background: white;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .typing-indicator span {
+        width: 8px;
+        height: 8px;
+        background: var(--gray-400);
+        border-radius: 50%;
+        animation: typing 1.4s infinite;
+    }
+
+    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typing {
+        0%, 60%, 100% { transform: translateY(0); }
+        30% { transform: translateY(-10px); }
+    }
+
+    /* ============================================
+       ÁREA DE INPUT
+       ============================================ */
+    .chat-input-area {
+        padding: 1.5rem 2rem;
+        background: white;
+        border-top: 2px solid var(--gray-100);
+    }
+
+    .input-wrapper {
+        display: flex;
+        gap: 1rem;
+        align-items: flex-end;
+    }
+
+    .text-input-container {
+        flex: 1;
+        position: relative;
+    }
+
+    .text-input-container textarea {
+        width: 100%;
+        min-height: 80px;
+        max-height: 200px;
+        padding: 1rem 1.5rem;
+        border: 2px solid var(--gray-200);
+        border-radius: var(--radius-lg);
+        font-size: 1rem;
+        line-height: 1.6;
+        resize: vertical;
+        outline: none;
+        transition: all 0.3s ease;
+        font-family: inherit;
+        background: var(--gray-50);
+    }
+
+    .text-input-container textarea:focus {
+        border-color: var(--primary);
+        background: white;
+        box-shadow: 0 0 0 4px var(--primary-soft);
+    }
+
+    .text-input-container textarea::placeholder {
+        color: var(--gray-400);
+        font-size: 0.95rem;
+    }
+
+    .char-counter {
+        position: absolute;
+        bottom: 0.5rem;
+        right: 1rem;
+        font-size: 0.7rem;
+        color: var(--gray-400);
+        background: white;
+        padding: 0.2rem 0.8rem;
+        border-radius: var(--radius-full);
+        border: 1px solid var(--gray-200);
+        transition: all 0.3s ease;
+    }
+
+    .char-counter.warning {
+        color: var(--warning);
+        border-color: var(--warning);
+    }
+
+    .char-counter.danger {
+        color: var(--danger);
+        border-color: var(--danger);
+    }
+
+    .send-button {
+        width: 70px;
+        height: 70px;
+        border: none;
+        border-radius: var(--radius-full);
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        color: white;
+        font-size: 1.5rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .send-button:hover {
+        transform: scale(1.05) translateY(-2px);
+        box-shadow: var(--shadow-xl);
+    }
+
+    .send-button:active {
+        transform: scale(0.95);
+    }
+
+    .send-button:disabled {
+        background: var(--gray-300);
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+
+    /* ============================================
+       PANEL DE SÍNTOMAS DETECTADOS
+       ============================================ */
+    .symptoms-panel {
+        background: white;
+        border-radius: var(--radius-lg);
+        padding: 1.5rem 2rem;
+        margin-top: 1.5rem;
+        box-shadow: var(--shadow-lg);
+        border: 1px solid var(--gray-200);
+    }
+
+    .symptoms-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .symptoms-header h6 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--gray-800);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+    }
+
+    .symptoms-header h6 i {
+        color: var(--primary);
+        font-size: 1.2rem;
+    }
+
+    .symptoms-header .badge {
+        background: var(--primary-soft);
+        color: var(--primary);
+        padding: 0.4rem 1rem;
+        border-radius: var(--radius-full);
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .symptoms-header .badge.has-symptoms {
+        background: var(--primary);
+        color: white;
+    }
+
+    .symptoms-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.8rem;
+        min-height: 60px;
+        padding: 0.5rem 0;
+    }
+
+    .symptom-chip {
+        background: var(--gray-100);
+        padding: 0.6rem 1.2rem;
+        border-radius: var(--radius-full);
+        font-size: 0.95rem;
+        color: var(--gray-700);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        transition: all 0.2s ease;
+        border: 1px solid var(--gray-200);
+        animation: popIn 0.3s ease;
+    }
+
+    @keyframes popIn {
+        0% { transform: scale(0.8); opacity: 0; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+
+    .symptom-chip i {
+        color: var(--success);
+        font-size: 0.9rem;
+    }
+
+    .symptom-chip .remove-symptom {
+        cursor: pointer;
+        width: 20px;
+        height: 20px;
+        background: var(--gray-300);
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        color: var(--gray-600);
+        margin-left: 0.3rem;
+        transition: all 0.2s ease;
+    }
+
+    .symptom-chip .remove-symptom:hover {
+        background: var(--danger);
+        color: white;
+        transform: scale(1.1);
+    }
+
+    .symptom-chip:hover {
+        background: white;
+        border-color: var(--primary);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .empty-symptoms {
+        color: var(--gray-400);
+        font-style: italic;
+        padding: 1rem 0;
+        text-align: center;
+        width: 100%;
+    }
+
+    /* ============================================
+       PANEL DE ENTENDIMIENTO DE IA
+       ============================================ */
+    .understanding-panel {
+        background: linear-gradient(135deg, #f0f9ff, #e6f2ff);
+        border-radius: var(--radius-lg);
+        padding: 2rem;
+        margin-top: 1.5rem;
+        border: 2px solid var(--primary-soft);
+        animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .understanding-title {
+        color: var(--primary-dark);
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+    }
+
+    .understanding-title i {
+        font-size: 1.6rem;
+    }
+
+    /* Grid de datos del paciente */
+    .data-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .data-card {
+        background: white;
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+        box-shadow: var(--shadow-md);
+        transition: all 0.3s ease;
+        border: 1px solid var(--gray-200);
+    }
+
+    .data-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-lg);
+        border-color: var(--primary);
+    }
+
+    .data-card .label {
+        font-size: 0.85rem;
+        color: var(--gray-500);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .data-card .value {
+        font-size: 1.6rem;
+        font-weight: 600;
+        color: var(--gray-800);
+        line-height: 1.2;
+    }
+
+    .data-card .unit {
+        font-size: 0.9rem;
+        color: var(--gray-400);
+        margin-left: 0.3rem;
+        font-weight: normal;
+    }
+
+    .data-card.inferred {
+        opacity: 0.7;
+        border: 2px dashed var(--warning);
+    }
+
+    /* Lista de síntomas detallados */
+    .symptoms-list {
+        background: white;
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--gray-200);
+    }
+
+    .symptoms-list h6 {
+        color: var(--primary);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .symptom-tag {
+        background: var(--gray-100);
+        padding: 0.6rem 1.2rem;
+        border-radius: var(--radius-full);
+        display: inline-block;
+        margin: 0.3rem;
+        font-size: 0.95rem;
+        border: 1px solid var(--gray-200);
+        transition: all 0.2s ease;
+    }
+
+    .symptom-tag .severity {
+        background: var(--primary);
+        color: white;
+        border-radius: var(--radius-full);
+        padding: 0.2rem 0.8rem;
+        margin-left: 0.5rem;
+        font-size: 0.8rem;
+        display: inline-block;
+    }
+
+    .severity-1 { background: var(--success); }
+    .severity-2 { background: var(--warning); }
+    .severity-3 { background: var(--danger); }
+
+    /* Factores de riesgo - NUEVO */
+    .factors-list {
+        background: white;
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--gray-200);
+    }
+
+    .factors-list h6 {
+        color: var(--warning);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .factor-tag {
+        background: #fff3cd;
+        padding: 0.6rem 1.2rem;
+        border-radius: var(--radius-full);
+        display: inline-block;
+        margin: 0.3rem;
+        font-size: 0.95rem;
+        border: 1px solid #ffeeba;
+    }
+
+    .factor-modificable {
+        border-left: 4px solid var(--success);
+    }
+
+    .factor-no-modificable {
+        border-left: 4px solid var(--gray-500);
+    }
+
+    /* Datos faltantes */
+    .missing-data {
+        background: #fff3cd;
+        border: 1px solid #ffeeba;
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        color: #856404;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.4); }
+        70% { box-shadow: 0 0 0 10px rgba(255, 193, 7, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0); }
+    }
+
+    .missing-data ul {
+        margin-top: 0.8rem;
+        padding-left: 1.5rem;
+    }
+
+    .missing-data li {
+        margin-bottom: 0.5rem;
+    }
+
+    /* Campos editables */
+    .editable-field {
+        cursor: pointer;
+        transition: all 0.2s ease;
+        padding: 0.3rem;
+        border-radius: var(--radius-sm);
+        display: inline-block;
+    }
+
+    .editable-field:hover {
+        background: var(--gray-100);
+        padding: 0.3rem 1rem;
+    }
+
+    .edit-input {
+        width: 100%;
+        padding: 0.8rem;
+        border: 2px solid var(--primary);
+        border-radius: var(--radius-md);
+        font-size: 1rem;
+        outline: none;
+        transition: all 0.3s ease;
+    }
+
+    .edit-input:focus {
+        box-shadow: 0 0 0 3px var(--primary-soft);
+    }
+
+    /* Botones de confirmación */
+    .confirmation-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .btn-confirm {
+        background: linear-gradient(135deg, var(--success), var(--success-dark));
+        color: white;
+        border: none;
+        padding: 1rem 2.5rem;
+        border-radius: var(--radius-full);
+        font-weight: 600;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.8rem;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .btn-confirm:hover {
+        transform: scale(1.05) translateY(-2px);
+        box-shadow: var(--shadow-xl);
+    }
+
+    .btn-correct {
+        background: linear-gradient(135deg, var(--warning), var(--warning-dark));
+        color: white;
+        border: none;
+        padding: 1rem 2.5rem;
+        border-radius: var(--radius-full);
+        font-weight: 600;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.8rem;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .btn-correct:hover {
+        transform: scale(1.05) translateY(-2px);
+        box-shadow: var(--shadow-xl);
+    }
+
+    /* ============================================
+       PANEL DE RESULTADOS UNIFICADOS
+       ============================================ */
+    .results-panel {
+        background: white;
+        border-radius: var(--radius-lg);
+        padding: 2rem;
+        margin-top: 1.5rem;
+        box-shadow: var(--shadow-lg);
+        border: 1px solid var(--gray-200);
+        animation: slideUp 0.5s ease;
+    }
+
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .results-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid var(--gray-100);
+    }
+
+    .results-header i {
+        font-size: 2rem;
+        color: var(--primary);
+    }
+
+    .results-header h5 {
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    .main-result-card {
+        background: linear-gradient(135deg, #f0f9ff, #ffffff);
+        border-radius: var(--radius-lg);
+        padding: 2rem;
+        margin-bottom: 1.5rem;
+        border-left: 4px solid var(--primary);
+        box-shadow: var(--shadow-md);
+    }
+
+    .confidence-meter {
+        background: white;
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: var(--shadow-md);
+        border: 1px solid var(--gray-200);
+    }
+
+    .confidence-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .confidence-value.alta { color: var(--success); }
+    .confidence-value.media { color: var(--warning); }
+    .confidence-value.baja { color: var(--danger); }
+
+    .protocol-card {
+        background: white;
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+        border: 1px solid var(--gray-200);
+        border-left: 4px solid var(--success);
+    }
+
+    .protocol-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--gray-800);
+        margin-bottom: 0.5rem;
+    }
+
+    .protocol-source {
+        font-size: 0.85rem;
+        color: var(--gray-500);
+        margin-bottom: 1rem;
+    }
+
+    .protocol-indications {
+        background: var(--gray-50);
+        border-radius: var(--radius-md);
+        padding: 1rem;
+        font-size: 0.95rem;
+        color: var(--gray-700);
+        border: 1px solid var(--gray-200);
+    }
+
+    .risk-badge {
+        display: inline-block;
+        padding: 0.6rem 1.5rem;
+        border-radius: var(--radius-full);
+        font-weight: 600;
+        font-size: 1rem;
+        text-align: center;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .risk-badge.bajo {
+        background: #d1fae5;
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+    }
+
+    .risk-badge.moderado {
+        background: #fef3c7;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+
+    .risk-badge.alto {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+
+    .risk-badge.muy-alto {
+        background: #7f1d1d;
+        color: #fee2e2;
+        border: 1px solid #991b1b;
+    }
+
+    .alert {
+        padding: 1rem 1.5rem;
+        border-radius: var(--radius-lg);
+        margin-bottom: 1rem;
+        border-left: 4px solid transparent;
+    }
+
+    .alert-info {
+        background: var(--primary-soft);
+        border-left-color: var(--primary);
+        color: var(--primary-dark);
+    }
+
+    .alert-warning {
+        background: #fff3cd;
+        border-left-color: var(--warning);
+        color: #856404;
+    }
+
+    .alert-success {
+        background: #d1fae5;
+        border-left-color: var(--success);
+        color: #065f46;
+    }
+
+    .alert-danger {
+        background: #fee2e2;
+        border-left-color: var(--danger);
+        color: #991b1b;
+    }
+
+    .recommendation-card {
+        background: linear-gradient(135deg, #f8fafc, white);
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        border: 1px solid var(--gray-200);
+        transition: all 0.3s ease;
+    }
+
+    .recommendation-card:hover {
+        transform: translateX(5px);
+        border-color: var(--primary);
+        box-shadow: var(--shadow-md);
+    }
+
+    .recommendation-card i {
+        color: var(--primary);
+        font-size: 1.2rem;
+        margin-right: 1rem;
+    }
+
+    /* ============================================
+       RESPONSIVE DESIGN
+       ============================================ */
+    @media (max-width: 768px) {
+        .chat-wrapper {
+            margin: 1rem;
+            border-radius: var(--radius-lg);
+        }
+
+        .chat-header {
+            padding: 1.5rem;
+        }
+
+        .chat-header h2 {
+            font-size: 1.8rem;
+        }
+
+        .header-icon {
+            width: 50px;
+            height: 50px;
+            font-size: 1.5rem;
+        }
+
+        .chat-messages {
+            height: 350px;
+            padding: 1rem;
+        }
+
+        .message-content {
+            max-width: 85%;
+        }
+
+        .chat-input-area {
+            padding: 1rem;
+        }
+
+        .input-wrapper {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .send-button {
+            width: 100%;
+            height: 50px;
+            border-radius: var(--radius-md);
+        }
+
+        .data-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .confirmation-buttons {
+            flex-direction: column;
+        }
+
+        .btn-confirm, .btn-correct {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .chat-header h2 {
+            font-size: 1.5rem;
+        }
+
+        .chat-header p {
+            font-size: 0.9rem;
+        }
+
+        .symptom-chip {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .results-header {
+            flex-direction: column;
+            text-align: center;
+        }
+    }
+
+    /* ============================================
+       ANIMACIONES ADICIONALES
+       ============================================ */
+    .pulse {
+        animation: pulse 2s infinite;
+    }
+
+    .shake {
+        animation: shake 0.5s ease-in-out;
+    }
+
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+        20%, 40%, 60%, 80% { transform: translateX(5px); }
+    }
+
+    .bounce {
+        animation: bounce 1s ease infinite;
+    }
+
+    @keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+    }
+
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        border: 0;
+    }
+
+    .loading {
+        position: relative;
+        pointer-events: none;
+        opacity: 0.7;
+    }
+
+    .loading::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 30px;
+        height: 30px;
+        margin: -15px 0 0 -15px;
+        border: 3px solid var(--gray-200);
+        border-top-color: var(--primary);
+        border-radius: 50%;
+        animation: spinner 0.8s linear infinite;
+    }
+
+    @keyframes spinner {
+        to { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Contenedor principal del chat -->
+    <div class="chat-wrapper">
+        <!-- Cabecera -->
+        <div class="chat-header">
+            <h2>
+                <span class="header-icon">
+                    <i class="fas fa-stethoscope"></i>
+                </span>
+                Diagnos.IA
+            </h2>
+            <p>Asistente clínico inteligente para evaluación de hipertensión arterial y riesgo cardiovascular</p>
+        </div>
+
+        <!-- Área de mensajes -->
+        <div class="chat-messages" id="chatMessages" role="log" aria-live="polite">
+            <!-- Mensaje de bienvenida -->
+            <div class="message bot">
+                <div class="message-content">
+                    <div class="welcome-tips">
+                        <h6 style="color: var(--primary); margin-bottom: 1rem;">
+                            <i class="fas fa-lightbulb"></i> 
+                            Para un diagnóstico preciso, incluye estos datos:
+                        </h6>
+                        <div class="tip-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
+                            <div class="tip-item">
+                                <i class="fas fa-user"></i>
+                                <span>Edad</span>
+                            </div>
+                            <div class="tip-item">
+                                <i class="fas fa-venus-mars"></i>
+                                <span>Sexo</span>
+                            </div>
+                            <div class="tip-item">
+                                <i class="fas fa-heartbeat"></i>
+                                <span>Presión arterial</span>
+                            </div>
+                            <div class="tip-item">
+                                <i class="fas fa-head-side-cough"></i>
+                                <span>Síntomas</span>
+                            </div>
+                            <div class="tip-item">
+                                <i class="fas fa-clock"></i>
+                                <span>Duración</span>
+                            </div>
+                            <div class="tip-item">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>Factores de riesgo</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 1rem;">
+                        ¡Hola! Soy tu asistente clínico. Describe los síntomas del paciente e incluye la mayor cantidad de datos posibles.
+                    </div>
+                    <div class="message-time">
+                        <i class="far fa-clock"></i> ahora
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Área de input -->
+        <div class="chat-input-area">
+            <div class="input-wrapper">
+                <div class="text-input-container">
+                    <label for="userInput" class="sr-only">Describe los síntomas del paciente</label>
+                    <textarea 
+                        id="userInput" 
+                        placeholder="Ej: Paciente de 55 años, masculino, presión 145/95, dolor de cabeza intenso y mareos desde hace 3 días. Es fumador y diabético."
+                        rows="2"
+                        maxlength="500"
+                        aria-label="Campo para describir síntomas"
+                    ></textarea>
+                    <div class="char-counter" id="charCounter" aria-live="polite">0/500</div>
+                </div>
+                <button class="send-button" id="sendButton" aria-label="Enviar mensaje">
+                    <i class="fas fa-paper-plane" aria-hidden="true"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel de síntomas detectados -->
+    <div class="symptoms-panel">
+        <div class="symptoms-header">
+            <h6>
+                <i class="fas fa-notes-medical" aria-hidden="true"></i>
+                Síntomas Detectados
+            </h6>
+            <span class="badge" id="symptomsCount" aria-label="Número de síntomas detectados">0</span>
+        </div>
+        <div class="symptoms-container" id="detectedSymptoms" role="list" aria-label="Lista de síntomas detectados">
+            <div class="empty-symptoms">
+                <i class="fas fa-info-circle me-2" aria-hidden="true"></i>
+                Los síntomas aparecerán aquí cuando los describas...
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel de entendimiento de IA (oculto inicialmente) -->
+    <div id="understandingPanel" style="display: none;" role="region" aria-label="Panel de verificación de datos">
+        <div class="understanding-panel">
+            <div class="understanding-title">
+                <i class="fas fa-brain" aria-hidden="true"></i>
+                <span>Lo que la IA entendió de tu descripción</span>
+            </div>
+            
+            <!-- Grid de datos del paciente -->
+            <div class="data-grid" id="patientDataGrid">
+                <!-- Edad -->
+                <div class="data-card" id="edadCard">
+                    <div class="label">
+                        <i class="fas fa-user" aria-hidden="true"></i>
+                        Edad
+                    </div>
+                    <div class="value">
+                        <span class="editable-field" onclick="editField('edad')" id="edadValue" role="button" tabindex="0" aria-label="Edad, clic para editar">—</span>
+                    </div>
+                </div>
+                
+                <!-- Sexo -->
+                <div class="data-card" id="sexoCard">
+                    <div class="label">
+                        <i class="fas fa-venus-mars" aria-hidden="true"></i>
+                        Sexo
+                    </div>
+                    <div class="value">
+                        <span class="editable-field" onclick="editField('sexo')" id="sexoValue" role="button" tabindex="0" aria-label="Sexo, clic para editar">—</span>
+                    </div>
+                </div>
+                
+                <!-- Presión sistólica -->
+                <div class="data-card" id="sistolicaCard">
+                    <div class="label">
+                        <i class="fas fa-heartbeat" aria-hidden="true"></i>
+                        Presión Sistólica
+                    </div>
+                    <div class="value">
+                        <span class="editable-field" onclick="editField('sistolica')" id="sistolicaValue" role="button" tabindex="0" aria-label="Presión sistólica, clic para editar">
+                            — <span class="unit">mmHg</span>
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Presión diastólica -->
+                <div class="data-card" id="diastolicaCard">
+                    <div class="label">
+                        <i class="fas fa-heartbeat" aria-hidden="true"></i>
+                        Presión Diastólica
+                    </div>
+                    <div class="value">
+                        <span class="editable-field" onclick="editField('diastolica')" id="diastolicaValue" role="button" tabindex="0" aria-label="Presión diastólica, clic para editar">
+                            — <span class="unit">mmHg</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Lista de síntomas detallados -->
+            <div class="symptoms-list">
+                <h6>
+                    <i class="fas fa-list" aria-hidden="true"></i>
+                    Síntomas detectados con su severidad:
+                </h6>
+                <div id="symptomsDetailContent" role="list" aria-label="Síntomas detallados">
+                    <p class="text-muted">No hay síntomas detectados</p>
+                </div>
+            </div>
+
+            <!-- NUEVA SECCIÓN: Factores de Riesgo Detectados -->
+            <div class="factors-list">
+                <h6>
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                    Factores de Riesgo Detectados:
+                </h6>
+                <div id="riskFactorsContent" class="factors-container">
+                    <p class="text-muted small">No se detectaron factores de riesgo</p>
+                </div>
+            </div>
+            
+            <!-- Datos faltantes o inferidos -->
+            <div class="missing-data" id="missingData" style="display: none;" role="alert">
+                <i class="fas fa-info-circle me-2" aria-hidden="true"></i>
+                <strong>Datos inferidos o faltantes:</strong>
+                <ul class="mt-2 mb-0" id="missingDataList"></ul>
+            </div>
+            
+            <!-- Botones de confirmación -->
+            <div class="confirmation-buttons">
+                <button class="btn-confirm" onclick="confirmAndEvaluate()" aria-label="Confirmar que los datos son correctos">
+                    <i class="fas fa-check-circle" aria-hidden="true"></i>
+                    Sí, todo está correcto
+                </button>
+                <button class="btn-correct" onclick="showCorrectionOptions()" aria-label="Corregir algún dato">
+                    <i class="fas fa-pencil-alt" aria-hidden="true"></i>
+                    Necesito corregir algo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel de resultados (oculto inicialmente) -->
+    <div id="resultsPanel" style="display: none;" role="region" aria-label="Resultados de la evaluación">
+        <div class="results-panel">
+            <div class="results-header">
+                <i class="fas fa-stethoscope" aria-hidden="true"></i>
+                <h5>Resultado de la Evaluación</h5>
+            </div>
+            
+            <div id="evaluationResults" class="evaluation-results"></div>
+        </div>
+    </div>
+
+    <!-- Formulario oculto para envío de datos -->
+    <form id="evaluationForm" method="POST" action="" style="display: none;" aria-hidden="true">
+        {% csrf_token %}
+        <input type="hidden" name="edad" id="inputEdad">
+        <input type="hidden" name="sexo" id="inputSexo">
+        <input type="hidden" name="sistolica" id="inputSistolica">
+        <input type="hidden" name="diastolica" id="inputDiastolica">
+        <select name="sintomas" id="inputSintomas" multiple style="display: none;"></select>
+        <div id="factoresContainer"></div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // ============================================
+    // CONFIGURACIÓN INICIAL Y VARIABLES GLOBALES
+    // ============================================
+    
+    console.log('🚀 Script cargado');
+    
+    // Estado de la aplicación
+    let currentSymptoms = [];
+    let currentPatientData = {
+        edad: null,
+        sexo: null,
+        sistolica: null,
+        diastolica: null,
+        factores: []  // Array para almacenar factores de riesgo
+    };
+    
+    // Elementos del DOM
+    let chatMessages, userInput, sendButton, charCounter;
+    let detectedSymptomsDiv, symptomsCount, understandingPanel;
+    let resultsPanel, symptomsDetailContent, missingDataDiv;
+    let missingDataList, evaluationForm, riskFactorsContent;
+
+    // ============================================
+    // FUNCIONES AUXILIARES
+    // ============================================
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function autoResize() {
+        if (!userInput) return;
+        
+        userInput.style.height = 'auto';
+        userInput.style.height = (userInput.scrollHeight) + 'px';
+        
+        const length = userInput.value.length;
+        if (charCounter) {
+            charCounter.textContent = `${length}/500`;
+            
+            charCounter.classList.remove('warning', 'danger');
+            if (length >= 450) {
+                charCounter.classList.add('danger');
+            } else if (length >= 400) {
+                charCounter.classList.add('warning');
+            }
+        }
+    }
+
+    // ============================================
+    // FUNCIONES DEL CHAT
+    // ============================================
+
+    function addMessage(sender, text) {
+        console.log('📝 addMessage llamado:', sender, text.substring(0, 50) + '...');
+        
+        if (!chatMessages) {
+            console.error('❌ chatMessages no encontrado');
+            return;
+        }
+        
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('es-ES', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false 
+        });
+        
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${sender}`;
+        messageDiv.setAttribute('role', 'listitem');
+        
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'message-content';
+        
+        if (sender === 'bot') {
+            contentDiv.innerHTML = `
+                <i class="fas fa-robot me-2" style="color: var(--primary);" aria-hidden="true"></i>
+                ${text}
+                <div class="message-time">
+                    <i class="far fa-clock" aria-hidden="true"></i> ${timeString}
+                </div>
+            `;
+        } else {
+            contentDiv.innerHTML = `
+                ${text}
+                <div class="message-time">
+                    <i class="far fa-clock" aria-hidden="true"></i> ${timeString}
+                </div>
+            `;
+        }
+        
+        messageDiv.appendChild(contentDiv);
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        console.log('✅ Mensaje agregado al chat');
+    }
+
+    function showTyping() {
+        if (!chatMessages) return;
+        
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'message bot';
+        typingDiv.id = 'typingIndicator';
+        typingDiv.innerHTML = `
+            <div class="message-content">
+                <div class="typing-indicator" aria-label="La IA está escribiendo">
+                    <span></span><span></span><span></span>
+                </div>
+            </div>
+        `;
+        chatMessages.appendChild(typingDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function hideTyping() {
+        const typing = document.getElementById('typingIndicator');
+        if (typing) typing.remove();
+    }
+
+    // ============================================
+    // PROCESAMIENTO DE LENGUAJE NATURAL
+    // ============================================
+
+    function processNaturalLanguage(text) {
+        console.log('🔍 Procesando texto:', text);
+        showTyping();
+        
+        // Timeout por si el servidor no responde
+        const timeoutId = setTimeout(() => {
+            hideTyping();
+            addMessage('bot', '⚠️ El servidor está tardando en responder. Verifica la conexión.');
+        }, 8000);
+        
+        fetch('/api/procesar_texto/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ texto: text })
+        })
+        .then(response => {
+            clearTimeout(timeoutId);
+            console.log('📡 Respuesta recibida:', response.status);
+            if (!response.ok) {
+                throw new Error(`Error ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('📦 Datos recibidos:', data);
+            hideTyping();
+            
+            if (data.error) {
+                addMessage('bot', '❌ Error: ' + data.error);
+                return;
+            }
+            
+            // Procesar síntomas
+            if (data.sintomas_detectados && data.sintomas_detectados.length > 0) {
+                data.sintomas_detectados.forEach(newSymptom => {
+                    if (!currentSymptoms.some(s => s.id === newSymptom.id)) {
+                        currentSymptoms.push(newSymptom);
+                    }
+                });
+                addMessage('bot', `✅ He detectado ${data.sintomas_detectados.length} síntoma(s): ${data.sintomas_detectados.map(s => s.nombre).join(', ')}`);
+            }
+            
+            // Procesar datos del paciente
+            if (data.datos_paciente) {
+                console.log('📊 Datos paciente:', data.datos_paciente);
+                if (data.datos_paciente.edad) {
+                    currentPatientData.edad = data.datos_paciente.edad;
+                }
+                if (data.datos_paciente.sexo) {
+                    currentPatientData.sexo = data.datos_paciente.sexo;
+                }
+                if (data.datos_paciente.presion_sistolica) {
+                    currentPatientData.sistolica = data.datos_paciente.presion_sistolica;
+                }
+                if (data.datos_paciente.presion_diastolica) {
+                    currentPatientData.diastolica = data.datos_paciente.presion_diastolica;
+                }
+            }
+            
+            // PROCESAR FACTORES DE RIESGO (mejorado)
+            extractRiskFactors(text);
+            
+            updateSymptomsDisplay();
+            showUnderstandingPanel();
+        })
+        .catch(error => {
+            clearTimeout(timeoutId);
+            hideTyping();
+            console.error('❌ Error en fetch:', error);
+            addMessage('bot', '❌ Error procesando el texto: ' + error.message);
+        });
+    }
+
+    // ============================================
+    // FUNCIÓN MEJORADA PARA DETECTAR FACTORES DE RIESGO
+    // ============================================
+    
+    function extractRiskFactors(text) {
+        console.log('🔍 Extrayendo factores de riesgo del texto:', text);
+        const lowerText = text.toLowerCase();
+        let factoresDetectados = [];
+        
+        // Mapeo ampliado de palabras clave a factores de riesgo
+        const factoresMap = {
+            'tabaquismo': ['fumador', 'tabaquismo', 'cigarrillo', 'fuma', 'cigarro', 'tabaco', 'fumando', 'fumadora'],
+            'fumador': ['fumador', 'fuma', 'cigarrillo', 'tabaco'],
+            'exfumador': ['exfumador', 'dejó de fumar', 'dejo de fumar', 'antes fumaba', 'ex fumador', 'exfumadora'],
+            'diabetes': ['diabetico', 'diabetes', 'diabética', 'azúcar', 'glucosa', 'diabet', 'diabético'],
+            'diabético': ['diabetico', 'diabetes', 'diabética', 'azúcar'],
+            'obesidad': ['obeso', 'obesidad', 'sobrepeso', 'peso', 'imc alto', 'obesa'],
+            'sobrepeso': ['sobrepeso', 'kilos de más', 'peso superior'],
+            'sedentarismo': ['sedentario', 'sedentarismo', 'ejercicio', 'no hace ejercicio', 'vida sedentaria', 'inactivo'],
+            'dislipidemia': ['colesterol', 'triglicéridos', 'lipidos', 'dislipidemia', 'colesterol alto'],
+            'hipercolesterolemia': ['colesterol alto', 'colesterol elevado', 'colesterol malo'],
+            'hipertensión': ['hipertenso', 'hipertensión', 'presión alta', 'tensión alta'],
+            'estrés': ['estrés', 'stress', 'ansiedad', 'nervioso', 'tensión emocional'],
+            'edad avanzada': ['mayor', 'años', 'edad'],
+        };
+        
+        // Buscar coincidencias
+        Object.entries(factoresMap).forEach(([factor, keywords]) => {
+            keywords.forEach(keyword => {
+                if (lowerText.includes(keyword) && !currentPatientData.factores.includes(factor)) {
+                    console.log(`➕ Factor detectado: "${keyword}" → ${factor}`);
+                    currentPatientData.factores.push(factor);
+                    factoresDetectados.push(factor);
+                }
+            });
+        });
+        
+        // Eliminar duplicados
+        currentPatientData.factores = [...new Set(currentPatientData.factores)];
+        
+        if (factoresDetectados.length > 0) {
+            // Mostrar mensaje en el chat
+            const mensajeFactores = `📋 Factores de riesgo detectados: ${factoresDetectados.join(', ')}`;
+            addMessage('bot', mensajeFactores);
+            
+            // Actualizar el panel de entendimiento si está visible
+            if (understandingPanel && understandingPanel.style.display === 'block') {
+                showUnderstandingPanel();
+            }
+        }
+        
+        return factoresDetectados;
+    }
+
+    function updateSymptomsDisplay() {
+        if (!detectedSymptomsDiv || !symptomsCount) return;
+        
+        if (currentSymptoms.length > 0) {
+            let html = '';
+            currentSymptoms.forEach(symptom => {
+                html += `
+                    <span class="symptom-chip" role="listitem">
+                        <i class="fas fa-check-circle" aria-hidden="true"></i>
+                        ${symptom.nombre}
+                        <span class="remove-symptom" onclick="window.removeSymptom(${symptom.id})" 
+                              role="button" tabindex="0" aria-label="Eliminar síntoma ${symptom.nombre}">
+                            <i class="fas fa-times" aria-hidden="true"></i>
+                        </span>
+                    </span>
+                `;
+            });
+            detectedSymptomsDiv.innerHTML = html;
+            symptomsCount.textContent = currentSymptoms.length;
+            symptomsCount.classList.add('has-symptoms');
+        } else {
+            detectedSymptomsDiv.innerHTML = '<div class="empty-symptoms"><i class="fas fa-info-circle me-2"></i>No hay síntomas detectados</div>';
+            symptomsCount.textContent = '0';
+            symptomsCount.classList.remove('has-symptoms');
+        }
+    }
+
+    // ============================================
+    // FUNCIONES GLOBALES
+    // ============================================
+
+    window.removeSymptom = function(symptomId) {
+        console.log('🗑️ Eliminando síntoma:', symptomId);
+        currentSymptoms = currentSymptoms.filter(s => s.id !== symptomId);
+        updateSymptomsDisplay();
+        showUnderstandingPanel();
+    };
+
+    window.removeRiskFactor = function(factor) {
+        console.log('🗑️ Eliminando factor:', factor);
+        currentPatientData.factores = currentPatientData.factores.filter(f => f !== factor);
+        showUnderstandingPanel();
+    };
+
+    window.editField = function(field) {
+        console.log('✏️ Editando campo:', field);
+        const element = document.getElementById(`${field}Value`);
+        if (!element) return;
+        
+        const currentValue = currentPatientData[field];
+        
+        let inputHtml = '';
+        switch(field) {
+            case 'edad':
+                inputHtml = `<input type="number" class="edit-input" id="edit_${field}" value="${currentValue || 50}" min="0" max="120" step="1">`;
+                break;
+            case 'sexo':
+                inputHtml = `
+                    <select class="edit-input" id="edit_${field}">
+                        <option value="" ${!currentValue ? 'selected' : ''}>Seleccionar...</option>
+                        <option value="M" ${currentValue === 'M' ? 'selected' : ''}>Masculino</option>
+                        <option value="F" ${currentValue === 'F' ? 'selected' : ''}>Femenino</option>
+                    </select>
+                `;
+                break;
+            case 'sistolica':
+            case 'diastolica':
+                inputHtml = `<input type="number" class="edit-input" id="edit_${field}" value="${currentValue || 120}" min="40" max="250" step="1">`;
+                break;
+        }
+        
+        element.innerHTML = inputHtml;
+        
+        setTimeout(() => {
+            const input = document.getElementById(`edit_${field}`);
+            if (input) {
+                input.focus();
+                input.onblur = () => window.saveEdit(field);
+                input.onkeypress = (e) => {
+                    if (e.key === 'Enter') window.saveEdit(field);
+                };
+            }
+        }, 100);
+    };
+
+    window.saveEdit = function(field) {
+        console.log('💾 Guardando campo:', field);
+        const input = document.getElementById(`edit_${field}`);
+        if (input) {
+            let newValue = input.value;
+            if (field !== 'sexo' && newValue) {
+                newValue = parseInt(newValue);
+            }
+            currentPatientData[field] = newValue || null;
+            
+            const inputEdad = document.getElementById('inputEdad');
+            const inputSexo = document.getElementById('inputSexo');
+            const inputSistolica = document.getElementById('inputSistolica');
+            const inputDiastolica = document.getElementById('inputDiastolica');
+            
+            if (inputEdad) inputEdad.value = currentPatientData.edad || '';
+            if (inputSexo) inputSexo.value = currentPatientData.sexo || '';
+            if (inputSistolica) inputSistolica.value = currentPatientData.sistolica || '';
+            if (inputDiastolica) inputDiastolica.value = currentPatientData.diastolica || '';
+        }
+        
+        showUnderstandingPanel();
+    };
+
+    window.showCorrectionOptions = function() {
+        console.log('🔧 Mostrando opciones de corrección');
+        addMessage('bot', '✏️ Puedes corregir los datos haciendo clic directamente sobre ellos en el panel azul.');
+        addMessage('bot', 'También puedes escribir nuevamente la descripción con los datos correctos.');
+        if (understandingPanel) {
+            understandingPanel.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
+
+    window.confirmAndEvaluate = function() {
+        console.log('✅ Confirmando y evaluando...');
+        console.log('📤 Factores a enviar:', currentPatientData.factores);
+        
+        addMessage('bot', '✅ Confirmado. Procesando evaluación...');
+        
+        if (!currentPatientData.edad) currentPatientData.edad = 50;
+        if (!currentPatientData.sistolica) currentPatientData.sistolica = 120;
+        if (!currentPatientData.diastolica) currentPatientData.diastolica = 80;
+        
+        const inputEdad = document.getElementById('inputEdad');
+        const inputSexo = document.getElementById('inputSexo');
+        const inputSistolica = document.getElementById('inputSistolica');
+        const inputDiastolica = document.getElementById('inputDiastolica');
+        const sintomasSelect = document.getElementById('inputSintomas');
+        const factoresContainer = document.getElementById('factoresContainer');
+        
+        if (inputEdad) inputEdad.value = currentPatientData.edad;
+        if (inputSexo) inputSexo.value = currentPatientData.sexo || '';
+        if (inputSistolica) inputSistolica.value = currentPatientData.sistolica;
+        if (inputDiastolica) inputDiastolica.value = currentPatientData.diastolica;
+        
+        if (sintomasSelect) {
+            sintomasSelect.innerHTML = '';
+            currentSymptoms.forEach(symptom => {
+                const option = document.createElement('option');
+                option.value = symptom.id;
+                option.selected = true;
+                sintomasSelect.appendChild(option);
+            });
+        }
+        
+        if (factoresContainer) {
+            factoresContainer.innerHTML = '';
+            currentPatientData.factores.forEach(factor => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'factores';
+                input.value = factor;
+                factoresContainer.appendChild(input);
+                console.log('   - Input hidden creado para factor:', factor);
+            });
+        }
+        
+        if (evaluationForm) {
+            console.log('📤 Enviando formulario con factores:', currentPatientData.factores);
+            evaluationForm.submit();
+        }
+    };
+
+    // ============================================
+    // FUNCIONES DEL PANEL DE ENTENDIMIENTO
+    // ============================================
+
+    function showUnderstandingPanel() {
+        console.log('📊 Mostrando panel de entendimiento');
+        if (!understandingPanel) return;
+        
+        understandingPanel.style.display = 'block';
+        if (resultsPanel) resultsPanel.style.display = 'none';
+        
+        // Actualizar valores básicos
+        const edadValue = document.getElementById('edadValue');
+        const sexoValue = document.getElementById('sexoValue');
+        const sistolicaValue = document.getElementById('sistolicaValue');
+        const diastolicaValue = document.getElementById('diastolicaValue');
+        
+        if (edadValue) {
+            edadValue.innerHTML = currentPatientData.edad ? 
+                `${currentPatientData.edad} <span class="unit">años</span>` : '—';
+        }
+        
+        if (sexoValue) {
+            sexoValue.innerHTML = currentPatientData.sexo ? 
+                (currentPatientData.sexo === 'M' ? 'Masculino' : 'Femenino') : '—';
+        }
+        
+        if (sistolicaValue) {
+            sistolicaValue.innerHTML = currentPatientData.sistolica ? 
+                `${currentPatientData.sistolica} <span class="unit">mmHg</span>` : '— <span class="unit">mmHg</span>';
+        }
+        
+        if (diastolicaValue) {
+            diastolicaValue.innerHTML = currentPatientData.diastolica ? 
+                `${currentPatientData.diastolica} <span class="unit">mmHg</span>` : '— <span class="unit">mmHg</span>';
+        }
+        
+        // Actualizar síntomas
+        if (symptomsDetailContent) {
+            if (currentSymptoms.length > 0) {
+                let symptomsHtml = '';
+                currentSymptoms.forEach(symptom => {
+                    const severidadTexto = ['Leve', 'Moderado', 'Severo'][symptom.severidad - 1] || 'Moderado';
+                    const severidadClass = `severity-${symptom.severidad || 2}`;
+                    symptomsHtml += `
+                        <span class="symptom-tag" role="listitem">
+                            <i class="fas fa-check-circle" style="color: #10b981;" aria-hidden="true"></i>
+                            ${symptom.nombre}
+                            <span class="severity ${severidadClass}">${severidadTexto}</span>
+                        </span>
+                    `;
+                });
+                symptomsDetailContent.innerHTML = symptomsHtml;
+            } else {
+                symptomsDetailContent.innerHTML = '<p class="text-muted">No hay síntomas detectados</p>';
+            }
+        }
+        
+        // NUEVO: Actualizar factores de riesgo
+        const factorsContent = document.getElementById('riskFactorsContent');
+        if (factorsContent) {
+            if (currentPatientData.factores.length > 0) {
+                let factorsHtml = '';
+                currentPatientData.factores.forEach(factor => {
+                    // Determinar si es modificable (lista de factores modificables)
+                    const modificables = ['tabaquismo', 'fumador', 'exfumador', 'diabetes', 'obesidad', 
+                                         'sobrepeso', 'sedentarismo', 'dislipidemia', 'hipercolesterolemia', 
+                                         'hipertensión', 'estrés'];
+                    
+                    const esModificable = modificables.includes(factor.toLowerCase());
+                    const badgeClass = esModificable ? 'bg-warning text-dark' : 'bg-secondary text-white';
+                    const iconClass = esModificable ? 'fa-pencil-alt' : 'fa-lock';
+                    const iconColor = esModificable ? '#f59e0b' : '#6b7280';
+                    
+                    factorsHtml += `
+                        <span class="symptom-tag" role="listitem" style="background: #fff3cd; border-color: #ffeeba;">
+                            <i class="fas ${iconClass}" style="color: ${iconColor};"></i>
+                            ${factor.charAt(0).toUpperCase() + factor.slice(1)}
+                            <span class="badge ${badgeClass} ms-2" style="font-size: 0.7rem;">
+                                ${esModificable ? 'Modificable' : 'No modificable'}
+                            </span>
+                            <span class="remove-symptom" onclick="removeRiskFactor('${factor}')" 
+                                  role="button" tabindex="0" style="margin-left: 5px;">
+                                <i class="fas fa-times"></i>
+                            </span>
+                        </span>
+                    `;
+                });
+                factorsContent.innerHTML = factorsHtml;
+            } else {
+                factorsContent.innerHTML = '<p class="text-muted small">No se detectaron factores de riesgo</p>';
+            }
+        }
+        
+        showMissingData();
+        understandingPanel.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function showMissingData() {
+        if (!missingDataDiv || !missingDataList) return;
+        
+        let missingItems = [];
+        
+        const edadCard = document.getElementById('edadCard');
+        const sexoCard = document.getElementById('sexoCard');
+        const sistolicaCard = document.getElementById('sistolicaCard');
+        const diastolicaCard = document.getElementById('diastolicaCard');
+        
+        if (!currentPatientData.edad) {
+            missingItems.push('No se detectó edad - Se usará valor por defecto (50 años)');
+            if (edadCard) edadCard.classList.add('inferred');
+        } else if (edadCard) {
+            edadCard.classList.remove('inferred');
+        }
+        
+        if (!currentPatientData.sexo) {
+            missingItems.push('No se detectó sexo - Se usará valor por defecto (No especificado)');
+            if (sexoCard) sexoCard.classList.add('inferred');
+        } else if (sexoCard) {
+            sexoCard.classList.remove('inferred');
+        }
+        
+        if (!currentPatientData.sistolica || !currentPatientData.diastolica) {
+            missingItems.push('No se detectó presión arterial - Se usará valor por defecto (120/80 mmHg)');
+            if (sistolicaCard) sistolicaCard.classList.add('inferred');
+            if (diastolicaCard) diastolicaCard.classList.add('inferred');
+        } else {
+            if (sistolicaCard) sistolicaCard.classList.remove('inferred');
+            if (diastolicaCard) diastolicaCard.classList.remove('inferred');
+        }
+        
+        if (missingItems.length > 0) {
+            let listHtml = '';
+            missingItems.forEach(item => {
+                listHtml += `<li><i class="fas fa-exclamation-triangle me-2" style="color: #f59e0b;"></i>${item}</li>`;
+            });
+            missingDataList.innerHTML = listHtml;
+            missingDataDiv.style.display = 'block';
+        } else {
+            missingDataDiv.style.display = 'none';
+        }
+    }
+
+    // ============================================
+    // FUNCIÓN PARA MOSTRAR RESULTADOS UNIFICADOS
+    // ============================================
+    
+    function showUnifiedResults(resultados) {
+        if (!resultsPanel) return;
+        
+        resultsPanel.style.display = 'block';
+        if (understandingPanel) understandingPanel.style.display = 'none';
+        
+        const resultsDiv = document.getElementById('evaluationResults');
+        if (!resultsDiv) return;
+        
+        // Determinar clase de confianza
+        let confianzaClass = 'media';
+        if (resultados.confianza_final > 70) confianzaClass = 'alta';
+        else if (resultados.confianza_final < 50) confianzaClass = 'baja';
+        
+        // Determinar color de riesgo
+        let riesgoColor = '#10b981'; // bajo por defecto
+        if (resultados.riesgo_final === 'MODERADO') riesgoColor = '#f59e0b';
+        else if (resultados.riesgo_final === 'ALTO') riesgoColor = '#ef4444';
+        else if (resultados.riesgo_final === 'MUY_ALTO') riesgoColor = '#7f1d1d';
+        
+        // Construir HTML
+        let html = `
+            <!-- Tarjeta principal con resultado unificado -->
+            <div class="main-result-card">
+                <div class="row align-items-center">
+                    <div class="col-md-7">
+                        <div class="mb-4">
+                            <span class="badge bg-primary p-2 mb-2">CLASIFICACIÓN HTA</span>
+                            <h2 class="text-primary" style="font-size: 2rem;">${resultados.clasificacion || 'No disponible'}</h2>
+                        </div>
+                        <div>
+                            <span class="badge bg-info p-2 mb-2">RIESGO CARDIOVASCULAR</span>
+                            <h1 class="display-4 fw-bold" style="color: ${riesgoColor};">${resultados.riesgo_final}</h1>
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <div class="confidence-meter">
+                            <div class="confidence-value ${confianzaClass}">${resultados.confianza_final}%</div>
+                            <p class="text-muted mb-1">Nivel de Confianza</p>
+                            <small class="text-muted">(Basado en ${resultados.metodo || 'sistema híbrido'})</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Explicación breve del resultado -->
+            <div class="alert alert-info mt-3">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>¿Cómo se determinó este resultado?</strong>
+                <p class="mb-0 small mt-2">
+                    Se combinaron las guías clínicas (riesgo ${resultados.riesgo_reglas}) 
+                    con el modelo de IA (riesgo ${resultados.prediccion_ml?.riesgo || 'N/A'} con ${resultados.prediccion_ml?.confianza || 0}% confianza)
+                    para obtener un resultado más preciso.
+                </p>
+            </div>
+        `;
+        
+        // Protocolo recomendado
+        if (resultados.protocolo_recomendado) {
+            html += `
+                <div class="protocol-card mt-4">
+                    <h5 class="mb-3">
+                        <i class="fas fa-book-medical text-success me-2"></i>
+                        Protocolo Recomendado
+                    </h5>
+                    <div class="protocol-title">${resultados.protocolo_recomendado.titulo}</div>
+                    <div class="protocol-source">${resultados.protocolo_recomendado.fuente} - Nivel ${resultados.protocolo_recomendado.nivel_evidencia}</div>
+                    <div class="protocol-indications">
+                        ${resultados.protocolo_recomendado.indicaciones ? resultados.protocolo_recomendado.indicaciones.split('\n')[0] : ''}
+                        ${resultados.protocolo_recomendado.indicaciones && resultados.protocolo_recomendado.indicaciones.length > 100 ? '...' : ''}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Recomendaciones adicionales
+        if (resultados.recomendaciones && resultados.recomendaciones.length > 0) {
+            html += `<h6 class="mt-4 mb-3"><i class="fas fa-exclamation-triangle text-warning me-2"></i>Recomendaciones Clínicas</h6>`;
+            resultados.recomendaciones.forEach(rec => {
+                html += `
+                    <div class="recommendation-card">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        ${rec}
+                    </div>
+                `;
+            });
+        }
+        
+        // Factores de riesgo considerados
+        if (resultados.factores && resultados.factores.length > 0) {
+            html += `
+                <div class="mt-4 pt-3 border-top">
+                    <h6 class="mb-2"><i class="fas fa-exclamation-triangle text-warning me-2"></i>Factores de Riesgo Considerados</h6>
+                    <div class="d-flex flex-wrap gap-2">
+                        ${resultados.factores.map(f => `<span class="badge bg-warning text-dark p-2">${f}</span>`).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Datos del paciente
+        html += `
+            <div class="mt-4 pt-3 border-top">
+                <h6 class="mb-2"><i class="fas fa-user me-2"></i>Datos del Paciente</h6>
+                <div class="row small">
+                    <div class="col-4">Edad: <strong>${resultados.edad || 'N/A'} años</strong></div>
+                    <div class="col-4">Sexo: <strong>${resultados.sexo || 'N/A'}</strong></div>
+                    <div class="col-4">PA: <strong>${resultados.sistolica || '?'}/${resultados.diastolica || '?'}</strong></div>
+                </div>
+            </div>
+        `;
+        
+        resultsDiv.innerHTML = html;
+        resultsPanel.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // ============================================
+    // INICIALIZACIÓN
+    // ============================================
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('✅ DOM Content Loaded');
+        
+        // Obtener elementos del DOM
+        chatMessages = document.getElementById('chatMessages');
+        userInput = document.getElementById('userInput');
+        sendButton = document.getElementById('sendButton');
+        charCounter = document.getElementById('charCounter');
+        detectedSymptomsDiv = document.getElementById('detectedSymptoms');
+        symptomsCount = document.getElementById('symptomsCount');
+        understandingPanel = document.getElementById('understandingPanel');
+        resultsPanel = document.getElementById('resultsPanel');
+        symptomsDetailContent = document.getElementById('symptomsDetailContent');
+        missingDataDiv = document.getElementById('missingData');
+        missingDataList = document.getElementById('missingDataList');
+        evaluationForm = document.getElementById('evaluationForm');
+        riskFactorsContent = document.getElementById('riskFactorsContent');
+        
+        console.log('Elementos obtenidos:', {
+            chatMessages: !!chatMessages,
+            userInput: !!userInput,
+            sendButton: !!sendButton,
+            charCounter: !!charCounter,
+            detectedSymptomsDiv: !!detectedSymptomsDiv,
+            symptomsCount: !!symptomsCount,
+            understandingPanel: !!understandingPanel,
+            resultsPanel: !!resultsPanel,
+            riskFactorsContent: !!riskFactorsContent,
+            evaluationForm: !!evaluationForm
+        });
+        
+        if (!sendButton) {
+            console.error('❌ Botón sendButton no encontrado');
+            return;
+        }
+        
+        if (!userInput) {
+            console.error('❌ Textarea userInput no encontrado');
+            return;
+        }
+        
+        // Event listener para el botón de enviar
+        sendButton.addEventListener('click', function(e) {
+            console.log('🖱️ Evento click del botón disparado');
+            e.preventDefault();
+            
+            const text = userInput.value.trim();
+            console.log('Texto obtenido:', text);
+            
+            if (text) {
+                addMessage('user', text);
+                processNaturalLanguage(text);
+                userInput.value = '';
+                autoResize();
+            } else {
+                userInput.focus();
+            }
+        });
+        
+        // Eventos para el textarea
+        userInput.addEventListener('input', autoResize);
+        
+        userInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                console.log('Enter presionado');
+                e.preventDefault();
+                sendButton.click();
+            }
+        });
+        
+        autoResize();
+        
+        console.log('✅ Inicialización completa');
+        
+        {% if resultados %}
+            console.log('📊 Procesando resultados del backend');
+            const resultados = {
+                edad: {{ resultados.edad|default:'null' }},
+                sexo: '{{ resultados.sexo|default:'' }}',
+                sistolica: {{ resultados.sistolica|default:'null' }},
+                diastolica: {{ resultados.diastolica|default:'null' }},
+                clasificacion: '{{ resultados.clasificacion|default:'' }}',
+                riesgo_final: '{{ resultados.riesgo_final|default:'' }}',
+                riesgo_reglas: '{{ resultados.riesgo_reglas|default:'' }}',
+                confianza_final: {{ resultados.confianza_final|default:0 }},
+                metodo: '{{ resultados.metodo|default:'' }}',
+                factores: [
+                    {% for factor in resultados.factores %}
+                        '{{ factor }}'{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ],
+                prediccion_ml: {
+                    riesgo: '{{ resultados.prediccion_ml.riesgo|default:'' }}',
+                    confianza: {{ resultados.prediccion_ml.confianza|default:0 }}
+                },
+                protocolo_recomendado: {
+                    titulo: '{{ resultados.protocolo_recomendado.titulo|default:'' }}',
+                    fuente: '{{ resultados.protocolo_recomendado.fuente|default:'' }}',
+                    nivel_evidencia: '{{ resultados.protocolo_recomendado.nivel_evidencia|default:'' }}',
+                    indicaciones: '{{ resultados.protocolo_recomendado.indicaciones|default:''|escapejs }}'
+                },
+                recomendaciones: [
+                    {% for rec in resultados.recomendaciones %}
+                        '{{ rec|escapejs }}'{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ]
+            };
+            
+            showUnifiedResults(resultados);
+            addMessage('bot', '📊 Evaluación completada. Revisa los resultados.');
+        {% endif %}
+    });
+</script>
+{% endblock %}

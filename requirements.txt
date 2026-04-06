@@ -1,0 +1,21 @@
+# requirements.txt - Dependencias actualizadas
+
+# Django y core
+Django==4.2.7
+djangorestframework==3.14.0
+
+# Procesamiento de datos
+pandas==2.0.3
+numpy==1.24.3
+
+# Machine Learning
+scikit-learn==1.3.0
+joblib==1.3.2
+
+# Visualización
+plotly==5.17.0
+
+# NLP
+spacy==3.6.1
+
+# python -m spacy download es_core_news_md

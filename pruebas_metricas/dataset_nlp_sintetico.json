@@ -1,0 +1,44 @@
+[
+    {
+        "texto": "Paciente varón de 45 años. Refiere dolor de pecho intenso desde hace 2 días. Su presión es de 160/95.",
+        "expected_edad": 45,
+        "expected_sexo": "M",
+        "expected_sistolica": 160,
+        "expected_diastolica": 95,
+        "expected_sintomas": [
+            "dolor pecho",
+            "dolor de pecho",
+            "dolor torácico",
+            "dolor",
+            "pecho"
+        ]
+    },
+    {
+        "texto": "Mujer de 62 años que acude por fuerte dolor de cabeza y mareos repentinos. pa 140/90.",
+        "expected_edad": 62,
+        "expected_sexo": "F",
+        "expected_sistolica": 140,
+        "expected_diastolica": 90,
+        "expected_sintomas": [
+            "cefalea",
+            "dolor de cabeza",
+            "mareos",
+            "dolor",
+            "cabeza",
+            "mareo"
+        ]
+    },
+    {
+        "texto": "El paciente tiene 70 años y viene por falta de aire al caminar. Presion arterial alta de 180 sobre 110.",
+        "expected_edad": 70,
+        "expected_sexo": "M",
+        "expected_sistolica": 180,
+        "expected_diastolica": 110,
+        "expected_sintomas": [
+            "disnea",
+            "falta de aire",
+            "aire",
+            "falta"
+        ]
+    }
+]

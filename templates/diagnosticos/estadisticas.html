@@ -1,0 +1,728 @@
+<!-- templates/diagnosticos/estadisticas.html -->
+{% extends 'diagnosticos/base.html' %}
+
+{% block title %}Dashboard de Estadísticas - Diagnos.IA{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary: #2563eb;
+        --primary-dark: #1d4ed8;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --info: #3b82f6;
+        --dark: #1f2937;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+    }
+
+    body {
+        background: linear-gradient(135deg, #667eea10, #764ba210);
+    }
+
+    /* Cabecera del dashboard */
+    .stats-header {
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        color: white;
+        padding: 2rem;
+        border-radius: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 20px 25px -5px rgba(37, 99, 235, 0.3);
+    }
+
+    .stats-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .stats-header p {
+        font-size: 1.1rem;
+        opacity: 0.9;
+        margin: 0;
+    }
+
+    /* Grid de métricas */
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.2rem;
+        margin-bottom: 2rem;
+    }
+
+    .metric-card {
+        background: white;
+        border-radius: 1.2rem;
+        padding: 1.5rem;
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        border: 1px solid var(--gray-200);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary), var(--success));
+    }
+
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 25px -5px rgba(0,0,0,0.15);
+    }
+
+    .metric-icon {
+        font-size: 2rem;
+        color: var(--primary);
+        margin-bottom: 1rem;
+    }
+
+    .metric-label {
+        font-size: 0.85rem;
+        color: var(--gray-700);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.5rem;
+    }
+
+    .metric-value {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        line-height: 1.2;
+    }
+
+    .metric-unit {
+        font-size: 0.9rem;
+        color: var(--gray-700);
+        margin-left: 0.3rem;
+        font-weight: normal;
+    }
+
+    .metric-trend {
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .trend-up { color: var(--success); }
+    .trend-down { color: var(--danger); }
+
+    /* Tarjetas de sección */
+    .section-card {
+        background: white;
+        border-radius: 1.5rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        border: 1px solid var(--gray-200);
+    }
+
+    .section-title {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: var(--gray-800);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid var(--gray-100);
+    }
+
+    .section-title i {
+        color: var(--primary);
+        font-size: 1.6rem;
+    }
+
+    /* Grid de dos columnas */
+    .two-column-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 768px) {
+        .two-column-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Tablas */
+    .stats-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .stats-table th {
+        text-align: left;
+        padding: 0.8rem 1rem;
+        background: var(--gray-50);
+        font-weight: 600;
+        color: var(--gray-700);
+        border-bottom: 2px solid var(--gray-200);
+    }
+
+    .stats-table td {
+        padding: 0.8rem 1rem;
+        border-bottom: 1px solid var(--gray-200);
+        color: var(--gray-800);
+    }
+
+    .stats-table tr:hover {
+        background: var(--gray-50);
+    }
+
+    .stats-table .badge {
+        padding: 0.3rem 0.8rem;
+        border-radius: 2rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .badge.riesgo-bajo { background: #d1fae5; color: #065f46; }
+    .badge.riesgo-moderado { background: #fef3c7; color: #92400e; }
+    .badge.riesgo-alto { background: #fee2e2; color: #991b1b; }
+    .badge.riesgo-muy-alto { background: #7f1d1d; color: #fee2e2; }
+
+    /* Barras de progreso */
+    .progress-bar-container {
+        background: var(--gray-200);
+        border-radius: 1rem;
+        height: 1.5rem;
+        margin: 0.5rem 0;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .progress-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--primary), var(--success));
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        padding-right: 0.5rem;
+        color: white;
+        font-size: 0.8rem;
+        font-weight: 600;
+        transition: width 1s ease;
+    }
+
+    /* KPI boxes */
+    .kpi-box {
+        background: var(--gray-50);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        text-align: center;
+        border: 1px solid var(--gray-200);
+    }
+
+    .kpi-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--primary);
+        line-height: 1.2;
+    }
+
+    .kpi-label {
+        font-size: 0.9rem;
+        color: var(--gray-700);
+        margin-top: 0.5rem;
+    }
+
+    /* Gráficos */
+    .chart-container {
+        background: white;
+        border-radius: 1.2rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        border: 1px solid var(--gray-200);
+    }
+
+    .chart-container h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--gray-800);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* Alertas informativas */
+    .info-alert {
+        background: linear-gradient(135deg, #dbeafe, #eff6ff);
+        border-left: 4px solid var(--primary);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+        color: var(--gray-800);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .stats-header h1 {
+            font-size: 1.8rem;
+        }
+        
+        .metrics-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .metric-value {
+            font-size: 1.5rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .metrics-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Cabecera -->
+    <div class="stats-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1>
+                    <i class="fas fa-chart-pie me-3"></i>
+                    Dashboard de Estadísticas
+                </h1>
+                <p>
+                    Análisis completo de datos clínicos y métricas de rendimiento del sistema
+                </p>
+            </div>
+            <div class="text-end">
+                <span class="badge bg-light text-dark p-3">
+                    <i class="fas fa-calendar me-2"></i>
+                    Actualizado: {% now "d/m/Y H:i" %}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Métricas Generales -->
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-icon">
+                <i class="fas fa-database"></i>
+            </div>
+            <div class="metric-label">Total Casos</div>
+            <div class="metric-value">{{ total_casos }}</div>
+            <div class="metric-trend">
+                <i class="fas fa-chart-line"></i>
+                <span>{{ tasa_exito }}% éxito</span>
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-icon">
+                <i class="fas fa-virus"></i>
+            </div>
+            <div class="metric-label">Enfermedades</div>
+            <div class="metric-value">{{ total_enfermedades }}</div>
+            <div class="metric-trend">
+                <i class="fas fa-tag"></i>
+                <span>{{ top_enfermedades.0.nombre|default:"N/A" }}</span>
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-icon">
+                <i class="fas fa-notes-medical"></i>
+            </div>
+            <div class="metric-label">Síntomas</div>
+            <div class="metric-value">{{ total_sintomas }}</div>
+            <div class="metric-trend">
+                <i class="fas fa-chart-bar"></i>
+                <span>{{ top_sintomas.0.frecuencia|default:"0" }} casos</span>
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="metric-label">Factores Riesgo</div>
+            <div class="metric-value">{{ total_factores }}</div>
+            <div class="metric-trend">
+                <i class="fas fa-heartbeat"></i>
+                <span>{{ top_factores.0.nombre|default:"N/A" }}</span>
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-icon">
+                <i class="fas fa-book-medical"></i>
+            </div>
+            <div class="metric-label">Protocolos</div>
+            <div class="metric-value">{{ total_protocolos }}</div>
+            <div class="metric-trend">
+                <i class="fas fa-check-circle text-success"></i>
+                <span>Activos</span>
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-icon">
+                <i class="fas fa-user-md"></i>
+            </div>
+            <div class="metric-label">Edad Promedio</div>
+            <div class="metric-value">{{ edad_promedio }} <span class="metric-unit">años</span></div>
+            <div class="metric-trend">
+                <i class="fas fa-arrows-alt-h"></i>
+                <span>{{ edad_min }}-{{ edad_max }} años</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resultados de Tratamiento -->
+    <div class="two-column-grid">
+        <div class="section-card">
+            <div class="section-title">
+                <i class="fas fa-check-circle"></i>
+                Resultados de Tratamiento
+            </div>
+            <div class="kpi-box mb-3">
+                <div class="kpi-value">{{ tasa_exito }}%</div>
+                <div class="kpi-label">Tasa de Éxito General</div>
+            </div>
+            <table class="stats-table">
+                <tr>
+                    <td><i class="fas fa-check-circle text-success me-2"></i> Casos Controlados</td>
+                    <td class="text-end fw-bold">{{ casos_exitosos }}</td>
+                    <td class="text-end">{{ casos_exitosos|divisibleby:total_casos|floatformat:1 }}%</td>
+                </tr>
+                <tr>
+                    <td><i class="fas fa-chart-line text-warning me-2"></i> Mejoría Parcial</td>
+                    <td class="text-end fw-bold">{{ casos_mejoria }}</td>
+                    <td class="text-end">{{ casos_mejoria|divisibleby:total_casos|floatformat:1 }}%</td>
+                </tr>
+                <tr>
+                    <td><i class="fas fa-times-circle text-danger me-2"></i> No Controlados</td>
+                    <td class="text-end fw-bold">{{ casos_no_controlados }}</td>
+                    <td class="text-end">{{ casos_no_controlados|divisibleby:total_casos|floatformat:1 }}%</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="section-card">
+            <div class="section-title">
+                <i class="fas fa-heartbeat"></i>
+                Presión Arterial
+            </div>
+            <div class="row">
+                <div class="col-6">
+                    <div class="kpi-box">
+                        <div class="kpi-value">{{ presion_stats.sistolica_promedio|floatformat:0 }}</div>
+                        <div class="kpi-label">Sistólica Promedio</div>
+                        <small class="text-muted">{{ presion_stats.sistolica_min }}-{{ presion_stats.sistolica_max }} mmHg</small>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="kpi-box">
+                        <div class="kpi-value">{{ presion_stats.diastolica_promedio|floatformat:0 }}</div>
+                        <div class="kpi-label">Diastólica Promedio</div>
+                        <small class="text-muted">{{ presion_stats.diastolica_min }}-{{ presion_stats.diastolica_max }} mmHg</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos Principales -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h3><i class="fas fa-chart-pie me-2" style="color: var(--primary);"></i>Distribución de Riesgo Cardiovascular</h3>
+                {% if graph_riesgo %}
+                    {{ graph_riesgo|safe }}
+                {% else %}
+                    <p class="text-muted text-center py-5">No hay datos suficientes</p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h3><i class="fas fa-chart-bar me-2" style="color: var(--primary);"></i>Distribución por Rangos de Edad</h3>
+                {% if graph_edad %}
+                    {{ graph_edad|safe }}
+                {% else %}
+                    <p class="text-muted text-center py-5">No hay datos suficientes</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h3><i class="fas fa-virus me-2" style="color: var(--primary);"></i>Top 10 Enfermedades</h3>
+                {% if graph_enfermedades %}
+                    {{ graph_enfermedades|safe }}
+                {% else %}
+                    <p class="text-muted text-center py-5">No hay datos suficientes</p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h3><i class="fas fa-notes-medical me-2" style="color: var(--primary);"></i>Top 15 Síntomas más Frecuentes</h3>
+                {% if graph_sintomas %}
+                    {{ graph_sintomas|safe }}
+                {% else %}
+                    <p class="text-muted text-center py-5">No hay datos suficientes</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+<!-- 
+    <div class="row">
+        <div class="col-md-8">
+            <div class="chart-container">
+                <h3><i class="fas fa-chart-line me-2" style="color: var(--primary);"></i>Evolución de Casos (Últimos 12 Meses)</h3>
+                {% if graph_temporal %}
+                    {{ graph_temporal|safe }}
+                {% else %}
+                    <p class="text-muted text-center py-5">No hay datos temporales suficientes</p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="chart-container">
+                <h3><i class="fas fa-venus-mars me-2" style="color: var(--primary);"></i>Distribución por Sexo</h3>
+                {% if graph_sexo %}
+                    {{ graph_sexo|safe }}
+                {% else %}
+                    <p class="text-muted text-center py-5">No hay datos suficientes</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+-->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h3><i class="fas fa-heartbeat me-2" style="color: var(--primary);"></i>Correlación Edad vs Presión Sistólica</h3>
+                {% if graph_correlacion %}
+                    {{ graph_correlacion|safe }}
+                {% else %}
+                    <p class="text-muted text-center py-5">No hay datos suficientes para correlación</p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h3><i class="fas fa-stethoscope me-2" style="color: var(--primary);"></i>Clasificación HTA</h3>
+                {% if graph_clasificacion %}
+                    {{ graph_clasificacion|safe }}
+                {% else %}
+                    <p class="text-muted text-center py-5">No hay datos suficientes</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Tablas de Datos -->
+    <div class="two-column-grid">
+        <!-- Top Enfermedades Tabla -->
+        <div class="section-card">
+            <div class="section-title">
+                <i class="fas fa-virus"></i>
+                Top Enfermedades (Detalle)
+            </div>
+            <table class="stats-table">
+                <thead>
+                    <tr>
+                        <th>Enfermedad</th>
+                        <th>Casos</th>
+                        <th>Éxito</th>
+                        <th>% Éxito</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for enf in top_enfermedades %}
+                    <tr>
+                        <td>{{ enf.nombre|truncatechars:30 }}</td>
+                        <td class="fw-bold">{{ enf.num_casos }}</td>
+                        <td>{{ enf.num_exitosos }}</td>
+                        <td>
+                            {% if enf.num_casos > 0 %}
+                                <span class="badge {% if enf.num_exitosos|divisibleby:enf.num_casos >= 70 %}bg-success{% else %}bg-warning{% endif %}">
+                                    {{ enf.num_exitosos|divisibleby:enf.num_casos|floatformat:1 }}%
+                                </span>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Top Síntomas Tabla -->
+        <div class="section-card">
+            <div class="section-title">
+                <i class="fas fa-notes-medical"></i>
+                Top Síntomas (Detalle)
+            </div>
+            <table class="stats-table">
+                <thead>
+                    <tr>
+                        <th>Síntoma</th>
+                        <th>Categoría</th>
+                        <th>Frecuencia</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sint in top_sintomas %}
+                    <tr>
+                        <td>{{ sint.nombre }}</td>
+                        <td>
+                            <span class="badge bg-secondary">{{ sint.get_categoria_display|default:"General" }}</span>
+                        </td>
+                        <td class="fw-bold">{{ sint.frecuencia }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="two-column-grid">
+        <!-- Top Factores de Riesgo -->
+        <div class="section-card">
+            <div class="section-title">
+                <i class="fas fa-exclamation-triangle"></i>
+                Factores de Riesgo más Comunes
+            </div>
+            <table class="stats-table">
+                <thead>
+                    <tr>
+                        <th>Factor de Riesgo</th>
+                        <th>Tipo</th>
+                        <th>Frecuencia</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for factor in top_factores %}
+                    <tr>
+                        <td>{{ factor.nombre }}</td>
+                        <td>
+                            <span class="badge {% if factor.categoria == 'MODIFICABLE' %}bg-success{% else %}bg-secondary{% endif %}">
+                                {{ factor.get_categoria_display }}
+                            </span>
+                        </td>
+                        <td class="fw-bold">{{ factor.frecuencia }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Distribución por Riesgo -->
+        <div class="section-card">
+            <div class="section-title">
+                <i class="fas fa-chart-pie"></i>
+                Distribución por Nivel de Riesgo
+            </div>
+            <table class="stats-table">
+                <thead>
+                    <tr>
+                        <th>Riesgo</th>
+                        <th>Casos</th>
+                        <th>%</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in casos_por_riesgo %}
+                    <tr>
+                        <td>
+                            <span class="badge riesgo-{{ item.riesgo|lower }}">
+                                {{ item.label }}
+                            </span>
+                        </td>
+                        <td class="fw-bold">{{ item.count }}</td>
+                        <td>{{ item.porcentaje }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Distribución por Edad Detallada -->
+    <div class="section-card">
+        <div class="section-title">
+            <i class="fas fa-users"></i>
+            Distribución Detallada por Rangos de Edad
+        </div>
+        <div class="row">
+            {% for rango in distribucion_edad %}
+            <div class="col-md-4 mb-3">
+                <div class="kpi-box">
+                    <div class="kpi-value">{{ rango.count }}</div>
+                    <div class="kpi-label">{{ rango.rango }}</div>
+                    <small class="text-muted">{{ rango.porcentaje }}% del total</small>
+                    <div class="progress-bar-container mt-2">
+                        <div class="progress-bar-fill" style="width: {{ rango.porcentaje }}%;">
+                            {{ rango.porcentaje }}%
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Información adicional -->
+    <div class="info-alert">
+        <i class="fas fa-info-circle fa-2x me-3 float-start"></i>
+        <h5 class="mb-2">Interpretación de Datos</h5>
+        <p class="mb-0">
+            Este dashboard muestra análisis basados en <strong>{{ total_casos }} casos clínicos</strong> registrados.
+            La tasa de éxito general es del <strong>{{ tasa_exito }}%</strong>.
+            El rango de edad más común es 
+            {% for r in distribucion_edad %}{% if forloop.first %}{{ r.rango }}{% endif %}{% endfor %}
+            con {{ distribucion_edad.0.count }} pacientes.
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Animaciones para las barras de progreso
+    document.addEventListener('DOMContentLoaded', function() {
+        const progressBars = document.querySelectorAll('.progress-bar-fill');
+        progressBars.forEach(bar => {
+            const width = bar.style.width;
+            bar.style.width = '0%';
+            setTimeout(() => {
+                bar.style.width = width;
+            }, 100);
+        });
+        
+        console.log("✅ Dashboard de estadísticas cargado correctamente");
+    });
+</script>
+{% endblock %}
