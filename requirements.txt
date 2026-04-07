@@ -24,3 +24,6 @@ es-core-news-md @ https://github.com/explosion/spacy-models/releases/download/es
 
 # python -m spacy download es_core_news_md
 # pip install https://github.com/explosion/spacy-models/releases/download/es_core_news_md-3.8.0/es_core_news_md-3.8.0-py3-none-any.whl
+
+gunicorn  # Production WSGI server
+whitenoise  # Static file serving
