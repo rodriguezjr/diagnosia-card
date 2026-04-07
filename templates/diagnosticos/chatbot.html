@@ -1129,9 +1129,11 @@
                     <div style="margin-top: 1rem;">
                         ¡Hola! Soy tu asistente clínico. Describe los síntomas del paciente e incluye la mayor cantidad de datos posibles.
                     </div>
+                    <!--
                     <div class="message-time">
                         <i class="far fa-clock"></i> ahora
                     </div>
+                    -->
                 </div>
             </div>
         </div>
@@ -1158,6 +1160,7 @@
     </div>
 
     <!-- Panel de síntomas detectados -->
+    <!--
     <div class="symptoms-panel">
         <div class="symptoms-header">
             <h6>
@@ -1173,6 +1176,7 @@
             </div>
         </div>
     </div>
+    -->
 
     <!-- Panel de entendimiento de IA (oculto inicialmente) -->
     <div id="understandingPanel" style="display: none;" role="region" aria-label="Panel de verificación de datos">
@@ -1480,7 +1484,7 @@
                         currentSymptoms.push(newSymptom);
                     }
                 });
-                addMessage('bot', `✅ He detectado ${data.sintomas_detectados.length} síntoma(s): ${data.sintomas_detectados.map(s => s.nombre).join(', ')}`);
+                //addMessage('bot', `✅ He detectado ${data.sintomas_detectados.length} síntoma(s): ${data.sintomas_detectados.map(s => s.nombre).join(', ')}`);
             }
             
             // Procesar datos del paciente
@@ -1557,7 +1561,7 @@
         if (factoresDetectados.length > 0) {
             // Mostrar mensaje en el chat
             const mensajeFactores = `📋 Factores de riesgo detectados: ${factoresDetectados.join(', ')}`;
-            addMessage('bot', mensajeFactores);
+            //addMessage('bot', mensajeFactores);
             
             // Actualizar el panel de entendimiento si está visible
             if (understandingPanel && understandingPanel.style.display === 'block') {
