@@ -17,17 +17,61 @@
 <body>
 {% block extra_js %}
 {% endblock %}
-    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+        <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top" id="mainNavbar">
         <div class="container">
             <a class="navbar-brand" href="{% url 'chatbot' %}">
-                <i class="fas fa-heartbeat me-2"></i>Diagnos.IA
+                <i class="fas fa-heartbeat me-2" style="color: var(--primary);"></i>
+                Diagnos.IA
             </a>
-            <div class="collapse navbar-collapse">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="{% url 'chatbot' %}">Chatbot</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'protocolos' %}">Protocolos</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'estadisticas' %}">Estadísticas</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'dashboard_predictivo' %}">IA Predictiva</a></li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'chatbot' %}active{% endif %}" 
+                           href="{% url 'chatbot' %}">
+                            <i class="fas fa-robot me-1"></i>Chatbot
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'protocolos' %}active{% endif %}" 
+                           href="{% url 'protocolos' %}">
+                            <i class="fas fa-book-medical me-1"></i>Protocolos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'estadisticas' %}active{% endif %}" 
+                           href="{% url 'estadisticas' %}">
+                            <i class="fas fa-chart-bar me-1"></i>Estadísticas
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'dashboard_predictivo' %}active{% endif %}" 
+                           href="{% url 'dashboard_predictivo' %}">
+                            <i class="fas fa-brain me-1"></i>IA Predictiva
+                        </a>
+                    </li>
+                    
+                    <!-- Separador visual -->
+                    <span class="nav-divider"></span>
+                    
+                    <!-- Botón de Administración (visible solo para usuarios autenticados) -->
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link btn-admin-nav" href="{% url 'admin:index' %}">
+                                <i class="fas fa-cog"></i>
+                                <span>Administración</span>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link btn-admin-nav" href="{% url 'admin:login' %}">
+                                <i class="fas fa-lock"></i>
+                                <span>Acceder</span>
+                            </a>
+                        </li>
+                    {% endif %}
                 </ul>
             </div>
         </div>

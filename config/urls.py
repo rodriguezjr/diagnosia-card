@@ -30,7 +30,7 @@ admin.site.index_title = "Bienvenido al Sistema" # Título en la página de inic
 
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('admin/', admin.site.urls, name='admin'),
     path('', include('diagnosticos.urls')),
 ]
 
