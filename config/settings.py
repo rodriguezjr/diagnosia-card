@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-@k3m#qwn3h+9tcd0x%f69+l73swtd943#q91o#qh8pys%d#ap&
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['https://diagnosia-card-production.up.railway.app/']
 
 
 # Application definition
